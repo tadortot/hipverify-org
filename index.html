@@ -307,6 +307,13 @@ if (returnSessionId && state.phase !== "existing") {
   window.history.replaceState({}, document.title, window.location.pathname);
 }
 
+// S25: Check for Stripe payment return
+var paymentSuccess = urlParams.get("payment");
+if (paymentSuccess === "success" && state.phase !== "existing" && state.phase !== "polling") {
+  state.phase = "verifying";
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
+
 // S25: Crypto capability detection — same as hipprotocol.org
 var HIP_CRYPTO_OK = null;
 var HIP_CRYPTO_ERR = "";
@@ -464,6 +471,13 @@ function render() {
     }
     h += '<a href="https://hipprotocol.org" class="hv-btn hv-btn-outline" style="text-decoration:none">← Return to hipprotocol.org</a>';
 
+  } else if (state.phase === "verifying") {
+    h += '<div class="hv-badge" style="border-color:rgba(37,99,235,0.3);color:#2563eb">● Payment Received</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Starting verification...</h1>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your payment was successful. Starting identity verification — you\'ll be redirected shortly.</p>';
+    h += '<div style="text-align:center;padding:24px"><div style="display:inline-block;width:32px;height:32px;border:3px solid rgba(184,134,11,0.2);border-top-color:#b8860b;border-radius:50%;animation:spin 1s linear infinite"></div></div>';
+    h += '<style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+
   } else if (state.phase === "error") {
     h += '<div class="hv-badge" style="border-color:rgba(220,38,38,0.3);color:#dc2626">● Error</div>';
     h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Verification failed</h1>';
@@ -477,6 +491,9 @@ function render() {
 
 // ── Actions ──
 
+// S25: Stripe Payment Link
+var STRIPE_PAYMENT_URL = "https://buy.stripe.com/14AfZj1Rk36D8uCfgp5Vu00";
+
 async function startPayment() {
   // S25: Block payment if crypto won't work — don't take money for a flow that will fail
   if (HIP_CRYPTO_OK === false) {
@@ -485,13 +502,12 @@ async function startPayment() {
     render();
     return;
   }
-  // PHASE 1: In the final version, this redirects to Stripe Checkout.
-  // After Stripe payment succeeds, user returns with a session token,
-  // and we proceed to Didit verification.
-  //
-  // For now (pre-Stripe), go directly to Didit verification.
-  // TODO: Replace with Stripe Checkout redirect once configured.
+  // Redirect to Stripe Checkout — user returns to ?payment=success
+  window.location.href = STRIPE_PAYMENT_URL;
+}
 
+async function startVerification() {
+  // Called after Stripe payment returns successfully
   state.phase = "verifying";
   render();
 
@@ -658,6 +674,10 @@ function resetFlow() {
 render();
 if (state.phase === "polling") {
   setTimeout(pollStatus, 1000);
+}
+// S25: Auto-start Didit verification after Stripe payment return
+if (state.phase === "verifying") {
+  setTimeout(startVerification, 500);
 }
 // S25: Re-render once crypto detection resolves (async) so warning banner appears
 if (HIP_CRYPTO_OK === null) {
