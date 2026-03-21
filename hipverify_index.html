@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HIP Verify — Tier 1 Government ID Credential</title>
+<meta name="description" content="Get your Tier 1 HUMAN-PROOF credential. Independent identity verification for the Human Integrity Protocol.">
+<meta property="og:title" content="HIP Verify — Tier 1 Credential">
+<meta property="og:description" content="Independent identity verification for HIP Tier 1 credentials. Government ID + liveness check.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://hipverify.org">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✓</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:#faf9f7;
+  font-family:'DM Sans','Helvetica Neue',sans-serif;
+  color:#1a1a1a;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:#b8860b;text-decoration:none}
+a:hover{text-decoration:underline}
+::selection{background:rgba(184,134,11,0.15);color:#1a1a1a}
+code{font-family:'DM Mono','SF Mono',monospace;font-size:12px;color:#666}
+
+/* ── Layout ── */
+.hv-nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 28px;
+  border-bottom:1px solid rgba(0,0,0,0.06);
+  background:rgba(250,249,247,0.95);
+  backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:100;
+}
+.hv-nav-brand{
+  font-family:'DM Mono',monospace;font-size:13px;font-weight:500;
+  letter-spacing:1px;color:#1a1a1a;
+  display:flex;align-items:center;gap:8px;
+}
+.hv-nav-brand span{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;border-radius:50%;
+  background:#b8860b;color:#fff;font-size:12px;font-weight:700;
+}
+.hv-nav-links{display:flex;gap:20px;align-items:center}
+.hv-nav-links a{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.5px;color:#666}
+.hv-nav-links a:hover{color:#1a1a1a;text-decoration:none}
+
+.hv-main{max-width:640px;margin:0 auto;padding:48px 24px 80px}
+
+/* ── Typography ── */
+.hv-serif{font-family:'Instrument Serif',Georgia,serif}
+.hv-mono{font-family:'DM Mono','SF Mono',monospace}
+
+.hv-hero-title{
+  font-family:'Instrument Serif',Georgia,serif;
+  font-size:clamp(36px,7vw,56px);font-weight:400;
+  color:#1a1a1a;line-height:1.1;margin-bottom:16px;
+}
+.hv-hero-sub{font-size:16px;color:#555;line-height:1.75;margin-bottom:36px}
+
+/* ── Components ── */
+.hv-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:#b8860b;
+  padding:5px 12px;border:1px solid rgba(184,134,11,0.25);border-radius:100px;
+  margin-bottom:20px;
+}
+.hv-card{
+  background:#fff;
+  border:1px solid rgba(0,0,0,0.08);
+  border-radius:10px;padding:24px;margin-bottom:16px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.03);
+}
+.hv-card-title{
+  font-family:'DM Mono',monospace;font-size:12px;font-weight:600;
+  color:#1a1a1a;margin-bottom:6px;
+  display:flex;align-items:center;gap:8px;
+}
+.hv-card-text{font-size:14px;color:#555;line-height:1.7}
+
+.hv-alert{
+  padding:14px 18px;border-radius:8px;
+  font-size:13px;line-height:1.6;margin-bottom:16px;
+}
+.hv-alert-blue{background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.12);color:#2563eb}
+.hv-alert-amber{background:rgba(217,119,6,0.04);border:1px solid rgba(217,119,6,0.12);color:#d97706}
+.hv-alert-green{background:rgba(22,163,74,0.04);border:1px solid rgba(22,163,74,0.12);color:#16a34a}
+.hv-alert-red{background:rgba(220,38,38,0.04);border:1px solid rgba(220,38,38,0.12);color:#dc2626}
+
+.hv-btn{
+  display:block;width:100%;
+  font-family:'DM Mono',monospace;font-size:13px;letter-spacing:0.5px;
+  padding:14px 24px;
+  background:#1a1a1a;color:#faf9f7;
+  border-radius:8px;font-weight:500;border:none;cursor:pointer;
+  text-align:center;text-decoration:none;
+  transition:background 0.2s,transform 0.1s;
+}
+.hv-btn:hover{background:#333;text-decoration:none}
+.hv-btn:active{transform:scale(0.99)}
+.hv-btn:disabled{background:#ccc;color:#888;cursor:not-allowed;transform:none}
+
+.hv-btn-outline{
+  background:transparent;color:#1a1a1a;
+  border:1px solid rgba(0,0,0,0.15);
+}
+.hv-btn-outline:hover{background:rgba(0,0,0,0.03)}
+
+.hv-btn-gold{background:#b8860b;color:#fff}
+.hv-btn-gold:hover{background:#a07609}
+
+.hv-result{
+  background:#faf9f7;border:1px solid rgba(0,0,0,0.06);
+  border-radius:8px;padding:14px 16px;margin-bottom:16px;
+}
+.hv-result-row{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.04);
+}
+.hv-result-row:last-child{border-bottom:none}
+.hv-result-label{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;
+  text-transform:uppercase;color:#888;flex-shrink:0;margin-right:12px;
+}
+.hv-result-val{
+  font-family:'DM Mono',monospace;font-size:11px;color:#1a1a1a;
+  text-align:right;word-break:break-all;
+}
+
+.hv-divider{height:1px;background:rgba(0,0,0,0.06);margin:28px 0}
+.hv-spinner{
+  display:inline-block;width:16px;height:16px;
+  border:2px solid rgba(0,0,0,0.1);border-top-color:#1a1a1a;
+  border-radius:50%;animation:hvspin 0.7s linear infinite;
+  margin-right:8px;vertical-align:middle;
+}
+@keyframes hvspin{to{transform:rotate(360deg)}}
+
+.hv-step{display:flex;gap:14px;margin-bottom:18px}
+.hv-step:last-child{margin-bottom:0}
+.hv-step-dot{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:12px;font-weight:600;
+  flex-shrink:0;margin-top:2px;
+}
+.hv-dot-pending{background:rgba(0,0,0,0.04);color:#aaa;border:1px solid rgba(0,0,0,0.08)}
+.hv-dot-active{background:#1a1a1a;color:#faf9f7}
+.hv-dot-done{background:rgba(22,163,74,0.08);color:#16a34a;border:1px solid rgba(22,163,74,0.15)}
+.hv-step-title{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:3px}
+.hv-step-text{font-size:13px;color:#777;line-height:1.6}
+
+/* ── Sections ── */
+.hv-section-label{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:#b8860b;margin-bottom:14px;
+}
+
+/* ── Footer ── */
+.hv-footer{
+  text-align:center;padding:40px 24px;font-size:12px;color:#999;
+  border-top:1px solid rgba(0,0,0,0.06);margin-top:40px;
+}
+.hv-footer a{color:#b8860b}
+
+/* ── Lane selector ── */
+.hv-lane{
+  padding:20px;border:1px solid rgba(0,0,0,0.08);border-radius:10px;
+  background:#fff;margin-bottom:12px;cursor:pointer;
+  transition:border-color 0.15s,box-shadow 0.15s;
+}
+.hv-lane:hover{border-color:rgba(184,134,11,0.3);box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.hv-lane-active{border-color:#b8860b;box-shadow:0 0 0 1px #b8860b}
+.hv-lane-header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.hv-lane-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+}
+.hv-lane-title{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:#1a1a1a}
+.hv-lane-text{font-size:13px;color:#777;line-height:1.6;padding-left:20px}
+.hv-lane-tag{
+  display:inline-block;font-family:'DM Mono',monospace;
+  font-size:10px;letter-spacing:0.5px;padding:2px 8px;
+  border-radius:4px;margin-left:20px;margin-top:6px;
+}
+
+/* ── Responsive ── */
+@media(max-width:480px){
+  .hv-nav-links{display:none}
+  .hv-main{padding:32px 18px 60px}
+}
+</style>
+</head>
+<body>
+
+<nav class="hv-nav">
+  <div class="hv-nav-brand">
+    <span>✓</span> HIP Verify
+  </div>
+  <div class="hv-nav-links">
+    <a href="#how">How It Works</a>
+    <a href="#institutional">Institutional</a>
+    <a href="https://hipprotocol.org" target="_blank" rel="noopener">hipprotocol.org ↗</a>
+  </div>
+</nav>
+
+<div class="hv-main" id="app">
+  <noscript>
+    <div class="hv-alert hv-alert-red">JavaScript is required for credential verification.</div>
+  </noscript>
+</div>
+
+<div class="hv-footer">
+  <strong style="color:#555">HIP Verify</strong> — Independent Tier 1 pathway operator<br>
+  <span style="margin-top:4px;display:inline-block">
+    Operating under <a href="https://hipprotocol.org" target="_blank" rel="noopener">HIP</a> DP-5 (Permissionless Proliferation).
+    Not affiliated with or operated by the HIP protocol itself.
+  </span><br>
+  <span style="margin-top:4px;display:inline-block;color:#bbb">
+    Identity verification provided by Didit. Payment processing by Stripe.
+    Your personal data is never stored — only a one-way deduplication hash.
+  </span><br>
+  <span style="margin-top:8px;display:inline-block">
+    <a href="#terms">Terms of Service</a> · <a href="#privacy">Privacy Policy</a> · <a href="https://hipprotocol.org" target="_blank">HIP Protocol</a>
+  </span>
+</div>
+
+<script>
+// ============================================================
+// HIP VERIFY — Tier 1 Credential Issuance
+// Independent pathway operator for hipprotocol.org
+// ============================================================
+
+// ── Configuration ──
+// Update these after deploying infrastructure
+var WORKER_URL = "https://hip-tier1-worker.hipprotocol.workers.dev";
+// Stripe Checkout will be configured here once Stripe account is set up
+// var STRIPE_CHECKOUT_URL = "https://checkout.stripe.com/...";
+
+// ── Crypto helpers (identical to hipprotocol.org) ──
+var hex = function(b) { return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("") };
+var unhex = function(h) { var b = new Uint8Array(h.length/2); for(var i=0;i<h.length;i+=2) b[i/2]=parseInt(h.substr(i,2),16); return b };
+var sha256 = async function(d) { var buf = typeof d==="string" ? new TextEncoder().encode(d) : d; return hex(await crypto.subtle.digest("SHA-256",buf)) };
+var b64e = function(b) { var s=""; var u=new Uint8Array(b); for(var i=0;i<u.length;i++) s+=String.fromCharCode(u[i]); return btoa(s) };
+
+// ── localStorage persistence (shared with hipprotocol.org) ──
+var HIP_CRED_KEY = "hip_credential_v1";
+function saveCredToStorage(cred) {
+  try { var obj = Object.assign({}, cred); delete obj._priv; delete obj._pub; localStorage.setItem(HIP_CRED_KEY, JSON.stringify(obj)); } catch(ex) {}
+}
+function loadCredFromStorage() {
+  try { var raw = localStorage.getItem(HIP_CRED_KEY); return raw ? JSON.parse(raw) : null; } catch(ex) { return null; }
+}
+
+// ── Cross-domain credential transfer ──
+// Encodes the credential into a URL fragment for transfer to hipprotocol.org.
+// URL fragments (#) are never sent to servers, so the private key stays client-side.
+// hipprotocol.org detects #hip-import=<payload> on load and imports the credential.
+function buildTransferUrl(cred) {
+  try {
+    var transferObj = Object.assign({}, cred);
+    delete transferObj._priv;
+    delete transferObj._pub;
+    var json = JSON.stringify(transferObj);
+    // Use base64url encoding (URL-safe, no padding) to avoid escaping issues
+    var bytes = new TextEncoder().encode(json);
+    var binary = ""; for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    var encoded = btoa(binary)
+      .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    return "https://hipprotocol.org#hip-import=" + encoded;
+  } catch (ex) {
+    // Fallback: plain link without transfer payload
+    return "https://hipprotocol.org";
+  }
+}
+
+// ── State ──
+var state = {
+  phase: "start",  // start | payment | verifying | polling | creating | done | error | duplicate | existing
+  sessionId: null,
+  error: null,
+  credential: null,
+  existingCredentialId: null,
+  verificationProof: null,
+  pollCount: 0,
+};
+
+// Check for existing credential
+var existingCred = loadCredFromStorage();
+if (existingCred && existingCred.version === "hip-credential-v1") {
+  state.phase = "existing";
+}
+
+// Check URL params for callback return from Didit
+var urlParams = new URLSearchParams(window.location.search);
+var returnSessionId = urlParams.get("session_id");
+if (returnSessionId && state.phase !== "existing") {
+  state.phase = "polling";
+  state.sessionId = returnSessionId;
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
+
+// S25: Crypto capability detection — same as hipprotocol.org
+var HIP_CRYPTO_OK = null;
+var HIP_CRYPTO_ERR = "";
+(function detectCryptoCapability() {
+  try {
+    if (typeof crypto === "undefined" || !crypto.subtle) {
+      HIP_CRYPTO_OK = false;
+      HIP_CRYPTO_ERR = "crypto.subtle is not available.";
+      return;
+    }
+    crypto.subtle.generateKey("Ed25519", false, ["sign", "verify"])
+      .then(function() { HIP_CRYPTO_OK = true; })
+      .catch(function(ex) {
+        HIP_CRYPTO_OK = false;
+        HIP_CRYPTO_ERR = ex.message || ex.name || "unknown";
+      });
+  } catch(ex) {
+    HIP_CRYPTO_OK = false;
+    HIP_CRYPTO_ERR = ex.message || "unknown";
+  }
+})();
+
+// ── Render ──
+function render() {
+  var app = document.getElementById("app");
+  var h = "";
+
+  if (state.phase === "existing") {
+    var ec = existingCred;
+    var tn = ec.tier === 1 ? "Tier 1 — Government ID" : ec.tier === 2 ? "Tier 2 — Biometric" : ec.tier === 3 ? "Tier 3 — Peer Vouch" : "Credential";
+    h += '<div class="hv-badge">● Existing Credential</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">You already have a credential</h1>';
+    h += '<p class="hv-hero-sub">HIP follows a one-credential-per-human principle. You have an active ' + tn + ' credential saved in this browser.</p>';
+    h += '<div class="hv-result">';
+    h += '<div class="hv-result-row"><span class="hv-result-label">Tier</span><span class="hv-result-val">' + tn + '</span></div>';
+    h += '<div class="hv-result-row"><span class="hv-result-label">ID</span><span class="hv-result-val">' + ec.credentialId + '</span></div>';
+    if (ec.created) h += '<div class="hv-result-row"><span class="hv-result-label">Created</span><span class="hv-result-val">' + new Date(ec.created).toLocaleString() + '</span></div>';
+    h += '</div>';
+    if (ec.tier !== 1) {
+      h += '<div class="hv-alert hv-alert-blue"><strong>Want to upgrade to Tier 1?</strong> Retire your existing credential first on <a href="https://hipprotocol.org" style="color:#2563eb">hipprotocol.org</a> (Credential tab → Retire), then return here.</div>';
+    }
+    var existTransferUrl = buildTransferUrl(ec);
+    h += '<a href="' + existTransferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Transfer to hipprotocol.org →</a>';
+    h += '<button class="hv-btn hv-btn-outline" onclick="downloadBackup()">↓ Download Backup Copy</button>';
+
+  } else if (state.phase === "start") {
+    // ── Hero ──
+    h += '<div class="hv-badge">✓ Independent Pathway Operator</div>';
+    h += '<h1 class="hv-hero-title">Tier 1 Credential</h1>';
+    h += '<p class="hv-hero-sub">Verify your government-issued ID to receive the highest assurance HIP credential. Your identity is confirmed, then forgotten — only a one-way hash remains.</p>';
+
+    // ── Self-service lane ──
+    h += '<div class="hv-section-label">Self-Service Verification</div>';
+    h += '<div class="hv-card">';
+    h += '<div class="hv-step"><div class="hv-step-dot hv-dot-active">1</div><div><div class="hv-step-title">Pay verification fee</div><div class="hv-step-text">A one-time fee of <strong style="color:#1a1a1a">$0.50</strong> covers identity verification processing via Stripe.</div></div></div>';
+    h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">2</div><div><div class="hv-step-title">Verify your identity</div><div class="hv-step-text">Scan your government ID and take a selfie for liveness detection through our verification partner.</div></div></div>';
+    h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">3</div><div><div class="hv-step-title">Credential issued</div><div class="hv-step-text">Your Tier 1 credential is created in your browser and transferred to hipprotocol.org in one click.</div></div></div>';
+    h += '</div>';
+
+    h += '<div class="hv-alert hv-alert-amber"><strong>About the fee:</strong> HIP is a free protocol. This $0.50 fee covers the cost of third-party identity verification and payment processing. It is paid to HIP Verify, not to the HIP protocol. <a href="https://hipprotocol.org" style="color:#d97706">Tier 2 and Tier 3 are free on hipprotocol.org.</a></div>';
+
+    // S25: Crypto capability warning
+    if (HIP_CRYPTO_OK === false) {
+      h += '<div class="hv-alert" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.3);color:#dc2626"><strong>Browser not supported:</strong> Your browser doesn\'t support Ed25519 cryptography needed to create HIP credentials. ';
+      h += 'If you\'re using DuckDuckGo browser, tap the <strong>shield icon</strong> in the address bar and disable protections for this site, then reload. ';
+      h += 'Otherwise, please open this page in Chrome, Firefox, Safari 17+, or Edge.</div>';
+    }
+
+    h += '<button class="hv-btn hv-btn-gold" onclick="startPayment()">Pay $0.50 & Begin Verification →</button>';
+
+    // ── Other lanes ──
+    h += '<div class="hv-divider"></div>';
+    h += '<div class="hv-section-label" id="institutional">Other Verification Paths</div>';
+
+    h += '<div class="hv-lane" onclick="void(0)" style="cursor:default">';
+    h += '<div class="hv-lane-header"><div class="hv-lane-dot" style="background:#2563eb"></div><div class="hv-lane-title">Institutional Verification</div></div>';
+    h += '<div class="hv-lane-text">If your organization operates a HIP-compatible verification service, they can issue your Tier 1 credential directly — no fee required. Ask your institution if they support HIP credentialing.</div>';
+    h += '<div class="hv-lane-tag" style="background:rgba(37,99,235,0.06);color:#2563eb">API Available</div>';
+    h += '</div>';
+
+    h += '<div class="hv-lane" onclick="void(0)" style="cursor:default">';
+    h += '<div class="hv-lane-header"><div class="hv-lane-dot" style="background:#888"></div><div class="hv-lane-title">Third-Party IDV Providers</div></div>';
+    h += '<div class="hv-lane-text">Identity verification providers can integrate with the HIP Verify API to issue credentials through their own platforms. Contact us for integration details.</div>';
+    h += '<div class="hv-lane-tag" style="background:rgba(0,0,0,0.04);color:#888">Coming Soon</div>';
+    h += '</div>';
+
+    // ── How it works ──
+    h += '<div class="hv-divider"></div>';
+    h += '<div class="hv-section-label" id="how">How It Works</div>';
+    h += '<div class="hv-card">';
+    h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px">HIP Verify is an <strong style="color:#1a1a1a">independent pathway operator</strong> — a third-party service that issues HIP-compatible Tier 1 credentials. It operates under the HIP Charter\'s DP-5 (Permissionless Proliferation): anyone can build tools that integrate with HIP without permission.</div>';
+    h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px"><strong style="color:#1a1a1a">What we verify:</strong> That you are a living human with a valid government-issued ID. We confirm your identity through document scanning and a live selfie.</div>';
+    h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px"><strong style="color:#1a1a1a">What we store:</strong> Nothing identifiable. After verification, only a one-way deduplication hash is retained — computed from your document number, date of birth, and issuing state, then HMAC-hashed with a server-side secret. This hash cannot be reversed to recover your identity. It exists solely to prevent the same person from creating multiple credentials.</div>';
+    h += '<div style="font-size:14px;color:#555;line-height:1.75"><strong style="color:#1a1a1a">What you get:</strong> A cryptographic key pair generated entirely in your browser. The private key never leaves your device. Your credential is saved to localStorage and auto-loads on hipprotocol.org. You can download a backup file for safekeeping.</div>';
+    h += '</div>';
+
+    // ── Charter compliance ──
+    h += '<div class="hv-card" style="background:rgba(184,134,11,0.02);border-color:rgba(184,134,11,0.12)">';
+    h += '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:1px;color:#b8860b;margin-bottom:8px;text-transform:uppercase">Charter Compliance</div>';
+    h += '<div style="font-size:13px;color:#555;line-height:1.7;margin-bottom:8px"><strong style="color:#1a1a1a">DP-5 — Permissionless Proliferation:</strong> "Any actor may build tools, integrate HIP, display Proofcards, host Bundles, or create verification interfaces without permission."</div>';
+    h += '<div style="font-size:13px;color:#555;line-height:1.7"><strong style="color:#1a1a1a">DP-7 — Zero Institutional Cost:</strong> "If it costs money, it\'s not the protocol — it\'s an institution choosing to invest in its own implementation." HIP Verify is that institution. The protocol itself remains free.</div>';
+    h += '</div>';
+
+  } else if (state.phase === "payment") {
+    h += '<div class="hv-badge">● Step 1 of 3</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,36px);font-weight:400;margin-bottom:12px">Processing payment…</h1>';
+    h += '<p style="font-size:15px;color:#777;line-height:1.7"><span class="hv-spinner"></span>Redirecting to Stripe Checkout. You\'ll return here automatically after payment.</p>';
+
+  } else if (state.phase === "verifying") {
+    h += '<div class="hv-badge">● Step 2 of 3</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,36px);font-weight:400;margin-bottom:12px">Redirecting to verification…</h1>';
+    h += '<p style="font-size:15px;color:#777;line-height:1.7"><span class="hv-spinner"></span>Preparing your identity verification session.</p>';
+
+  } else if (state.phase === "polling") {
+    h += '<div class="hv-badge">● Step 2 of 3</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,36px);font-weight:400;margin-bottom:12px">Checking verification result</h1>';
+    h += '<p style="font-size:15px;color:#777;line-height:1.7;margin-bottom:24px"><span class="hv-spinner"></span>Waiting for your verification to be processed.</p>';
+    h += '<div class="hv-card">';
+    h += '<div class="hv-step"><div class="hv-step-dot hv-dot-done">✓</div><div><div class="hv-step-title">Payment confirmed</div><div class="hv-step-text">Your verification fee has been processed.</div></div></div>';
+    h += '<div class="hv-step"><div class="hv-step-dot hv-dot-active">2</div><div><div class="hv-step-title">Processing verification…</div><div class="hv-step-text">Your identity documents are being verified. Poll attempt ' + state.pollCount + '.</div></div></div>';
+    h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">3</div><div><div class="hv-step-title">Credential creation</div><div class="hv-step-text">Waiting for verification result.</div></div></div>';
+    h += '</div>';
+
+  } else if (state.phase === "creating") {
+    h += '<div class="hv-badge">● Step 3 of 3</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,36px);font-weight:400;margin-bottom:12px">Creating your credential</h1>';
+    h += '<p style="font-size:15px;color:#777;line-height:1.7"><span class="hv-spinner"></span>Generating your cryptographic identity and saving to this browser.</p>';
+
+  } else if (state.phase === "done") {
+    var c = state.credential;
+    var transferUrl = buildTransferUrl(c);
+    h += '<div class="hv-badge" style="border-color:rgba(22,163,74,0.3);color:#16a34a">✓ Tier 1 Verified</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Your Tier 1 credential is ready</h1>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your identity has been verified and your credential is saved in this browser. Click below to transfer it to hipprotocol.org and start attesting.</p>';
+    h += '<div class="hv-alert hv-alert-green">✓ <strong>Credential created successfully.</strong> It will be transferred automatically when you click the button below.</div>';
+    h += '<div class="hv-result">';
+    h += '<div class="hv-result-row"><span class="hv-result-label">Tier</span><span class="hv-result-val">Tier 1 — Government ID</span></div>';
+    h += '<div class="hv-result-row"><span class="hv-result-label">Credential ID</span><span class="hv-result-val">' + c.credentialId + '</span></div>';
+    h += '<div class="hv-result-row"><span class="hv-result-label">Public Key</span><span class="hv-result-val">' + c.publicKey + '</span></div>';
+    h += '<div class="hv-result-row"><span class="hv-result-label">Pathway</span><span class="hv-result-val">' + c.pathway + '</span></div>';
+    h += '<div class="hv-result-row"><span class="hv-result-label">Created</span><span class="hv-result-val">' + new Date(c.created).toLocaleString() + '</span></div>';
+    h += '<div class="hv-result-row"><span class="hv-result-label">Issued By</span><span class="hv-result-val">' + (c.issuedBy || "hipverify.org") + '</span></div>';
+    h += '</div>';
+    h += '<a href="' + transferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Transfer to hipprotocol.org → Start Attesting</a>';
+    h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:12px" onclick="downloadBackup()">↓ Download Backup Copy</button>';
+    h += '<div class="hv-alert hv-alert-amber"><strong>Keep your backup.</strong> Your credential is also saved in this browser, but if you clear site data, switch browsers, or use a different device, you\'ll need the backup file to restore it.</div>';
+
+  } else if (state.phase === "duplicate") {
+    h += '<div class="hv-badge" style="border-color:rgba(217,119,6,0.3);color:#d97706">● Duplicate Detected</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Identity already verified</h1>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">This government ID has already been used to create a Tier 1 credential. HIP enforces one credential per human.</p>';
+    h += '<div class="hv-alert hv-alert-blue"><strong>What to do:</strong> If you already have your credential file, import it on hipprotocol.org. If you\'ve lost access, credential recovery via re-verification will be available in a future update.</div>';
+    if (state.existingCredentialId) {
+      h += '<div class="hv-result"><div class="hv-result-row"><span class="hv-result-label">Existing Credential</span><span class="hv-result-val">' + state.existingCredentialId + '</span></div></div>';
+    }
+    h += '<a href="https://hipprotocol.org" class="hv-btn hv-btn-outline" style="text-decoration:none">← Return to hipprotocol.org</a>';
+
+  } else if (state.phase === "error") {
+    h += '<div class="hv-badge" style="border-color:rgba(220,38,38,0.3);color:#dc2626">● Error</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Verification failed</h1>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">' + (state.error || "An unknown error occurred.") + '</p>';
+    h += '<button class="hv-btn" onclick="resetFlow()">Try Again</button>';
+    h += '<div style="margin-top:12px"><a href="https://hipprotocol.org" style="font-size:13px;color:#888">← Return to hipprotocol.org</a></div>';
+  }
+
+  app.innerHTML = h;
+}
+
+// ── Actions ──
+
+async function startPayment() {
+  // S25: Block payment if crypto won't work — don't take money for a flow that will fail
+  if (HIP_CRYPTO_OK === false) {
+    state.phase = "error";
+    state.error = "Your browser doesn't support Ed25519 cryptography needed to create credentials. If you're using DuckDuckGo browser, tap the shield icon in the address bar and disable protections, then reload. Otherwise, try Chrome, Firefox, Safari 17+, or Edge.";
+    render();
+    return;
+  }
+  // PHASE 1: In the final version, this redirects to Stripe Checkout.
+  // After Stripe payment succeeds, user returns with a session token,
+  // and we proceed to Didit verification.
+  //
+  // For now (pre-Stripe), go directly to Didit verification.
+  // TODO: Replace with Stripe Checkout redirect once configured.
+
+  state.phase = "verifying";
+  render();
+
+  try {
+    var resp = await fetch(WORKER_URL + "/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    var data = await resp.json();
+
+    if (!resp.ok || !data.verification_url) {
+      throw new Error(data.error || data.detail || "Failed to create verification session");
+    }
+
+    state.sessionId = data.session_id;
+    window.location.href = data.verification_url;
+
+  } catch (ex) {
+    state.phase = "error";
+    state.error = "Could not start verification: " + ex.message;
+    render();
+  }
+}
+
+async function pollStatus() {
+  if (state.phase !== "polling" || !state.sessionId) return;
+  state.pollCount++;
+  render();
+
+  try {
+    var resp = await fetch(WORKER_URL + "/status/" + state.sessionId);
+    var data = await resp.json();
+
+    if (data.status === "Approved") {
+      if (data.dedup === "exists") {
+        state.phase = "duplicate";
+        state.existingCredentialId = data.existingCredentialId || null;
+        render();
+        return;
+      }
+
+      state.verificationProof = data.verificationProof || null;
+      state.phase = "creating";
+      render();
+      await createCredential(data);
+      return;
+    }
+
+    if (data.status === "Declined") {
+      state.phase = "error";
+      state.error = "Your identity verification was declined. Please ensure you use a valid, unexpired government ID and that your selfie matches the document photo.";
+      render();
+      return;
+    }
+
+    if (data.status === "Abandoned" || data.status === "Expired") {
+      state.phase = "error";
+      state.error = "Verification session " + data.status.toLowerCase() + ". Please try again.";
+      render();
+      return;
+    }
+
+    // Still pending — poll again
+    if (state.pollCount < 60) {
+      setTimeout(pollStatus, 3000);
+    } else {
+      state.phase = "error";
+      state.error = "Verification is taking longer than expected. Please refresh this page to check again.";
+      render();
+    }
+
+  } catch (ex) {
+    if (state.pollCount < 60) {
+      setTimeout(pollStatus, 5000);
+    } else {
+      state.phase = "error";
+      state.error = "Lost connection while checking verification status: " + ex.message;
+      render();
+    }
+  }
+}
+
+async function createCredential(sessionData) {
+  try {
+    var kp = await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"]);
+    var pubRaw = await crypto.subtle.exportKey("raw", kp.publicKey);
+    var pub = hex(pubRaw);
+    var cid = await sha256(unhex(pub));
+    var privBytes = await crypto.subtle.exportKey("pkcs8", kp.privateKey);
+
+    var newCred = {
+      version: "hip-credential-v1",
+      credentialId: cid,
+      publicKey: pub,
+      privateKey: b64e(privBytes),
+      tier: 1,
+      pathway: "government-id-didit-v1",
+      issuedBy: "hipverify.org",
+      issuanceProof: sessionData.verificationProof || {
+        type: "didit-idv-v3",
+        sessionId: state.sessionId,
+        verifiedAt: new Date().toISOString(),
+      },
+      created: new Date().toISOString(),
+      warning: "This file contains your private key. Anyone with this file can sign attestations as you. Store it securely.",
+    };
+
+    saveCredToStorage(newCred);
+
+    // Register dedup hash
+    if (sessionData.dedup === "new") {
+      try {
+        await fetch(WORKER_URL + "/register-dedup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            session_id: state.sessionId,
+            credential_id: cid,
+          }),
+        });
+      } catch (_) {
+        console.warn("Dedup registration failed — credential created anyway.");
+      }
+    }
+
+    state.credential = newCred;
+    state.phase = "done";
+    render();
+
+  } catch (ex) {
+    state.phase = "error";
+    state.error = "Failed to create credential: " + ex.message + ". " +
+      (ex.name === "NotSupportedError" ? "Your browser doesn't support Ed25519 cryptography. Try Chrome, Firefox, Safari 17+, or Edge. If using DuckDuckGo browser, disable shield protections for this site." : "Your verification was successful — try refreshing the page.");
+    render();
+  }
+}
+
+function downloadBackup() {
+  var cred = state.credential || existingCred;
+  if (!cred) return;
+  var obj = Object.assign({}, cred);
+  delete obj._priv;
+  delete obj._pub;
+  var tierLabel = cred.tier === 1 ? "T1" : cred.tier === 2 ? "T2" : cred.tier === 3 ? "T3" : "TX";
+  var blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "HIP_Credential_" + tierLabel + "_" + cred.credentialId.substring(0, 8) + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function resetFlow() {
+  state.phase = "start";
+  state.sessionId = null;
+  state.error = null;
+  state.pollCount = 0;
+  render();
+}
+
+// ── Init ──
+render();
+if (state.phase === "polling") {
+  setTimeout(pollStatus, 1000);
+}
+// S25: Re-render once crypto detection resolves (async) so warning banner appears
+if (HIP_CRYPTO_OK === null) {
+  var checkCrypto = function() {
+    if (HIP_CRYPTO_OK !== null) { render(); return; }
+    setTimeout(checkCrypto, 50);
+  };
+  setTimeout(checkCrypto, 60);
+}
+</script>
+</body>
+</html>
