@@ -290,6 +290,7 @@ var state = {
   existingCredentialId: null,
   verificationProof: null,
   pollCount: 0,
+  returnStatus: null,
 };
 
 // Check for existing credential
@@ -300,11 +301,19 @@ if (existingCred && existingCred.version === "hip-credential-v1") {
 
 // Check URL params for callback return from Didit
 var urlParams = new URLSearchParams(window.location.search);
-var returnSessionId = urlParams.get("session_id");
+var returnSessionId = urlParams.get("session_id") || urlParams.get("verificationSessionId");
+var returnStatus = urlParams.get("status");
 if (returnSessionId && state.phase !== "existing") {
+  // Didit may return a different ID than the worker session_id.
+  // Use the persisted worker session_id for polling (that's what the webhook stores under).
+  var pendingSession = null;
+  try { pendingSession = localStorage.getItem("hip_pending_session"); } catch(e) {}
   state.phase = "polling";
-  state.sessionId = returnSessionId;
+  state.sessionId = pendingSession || returnSessionId;
+  if (returnStatus) state.returnStatus = returnStatus;
   window.history.replaceState({}, document.title, window.location.pathname);
+  // Clean up pending session
+  try { localStorage.removeItem("hip_pending_session"); } catch(e) {}
 }
 
 // S25: Check for Stripe payment return
@@ -524,6 +533,8 @@ async function startVerification() {
     }
 
     state.sessionId = data.session_id;
+    // Persist session ID so it survives the redirect to Didit and back
+    try { localStorage.setItem("hip_pending_session", data.session_id); } catch(e) {}
     window.location.href = data.verification_url;
 
   } catch (ex) {
