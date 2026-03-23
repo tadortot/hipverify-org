@@ -377,12 +377,12 @@ function render() {
     // ── Self-service lane ──
     h += '<div class="hv-section-label">Self-Service Verification</div>';
     h += '<div class="hv-card">';
-    h += '<div class="hv-step"><div class="hv-step-dot hv-dot-active">1</div><div><div class="hv-step-title">Pay verification fee</div><div class="hv-step-text">A one-time fee of <strong style="color:#1a1a1a">$0.50</strong> covers identity verification processing via Stripe.</div></div></div>';
+    h += '<div class="hv-step"><div class="hv-step-dot hv-dot-active">1</div><div><div class="hv-step-title">Pay verification fee</div><div class="hv-step-text">A one-time fee of <strong style="color:#1a1a1a">$1.00</strong> covers identity verification processing via Stripe.</div></div></div>';
     h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">2</div><div><div class="hv-step-title">Verify your identity</div><div class="hv-step-text">Scan your government ID and take a selfie for liveness detection through our verification partner.</div></div></div>';
     h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">3</div><div><div class="hv-step-title">Credential issued</div><div class="hv-step-text">Your Tier 1 credential is created in your browser and transferred to hipprotocol.org in one click.</div></div></div>';
     h += '</div>';
 
-    h += '<div class="hv-alert hv-alert-amber"><strong>About the fee:</strong> HIP is a free protocol. This $0.50 fee covers the cost of third-party identity verification and payment processing. It is paid to HIP Verify, not to the HIP protocol. <a href="https://hipprotocol.org" style="color:#d97706">Tier 2 and Tier 3 are free on hipprotocol.org.</a></div>';
+    h += '<div class="hv-alert hv-alert-amber"><strong>About the fee:</strong> HIP is a free protocol. This $1.00 fee covers the cost of third-party identity verification and payment processing. It is paid to HIP Verify, not to the HIP protocol. <a href="https://hipprotocol.org" style="color:#d97706">Tier 2 and Tier 3 are free on hipprotocol.org.</a></div>';
 
     // S25: Crypto capability warning
     if (HIP_CRYPTO_OK === false) {
@@ -391,7 +391,7 @@ function render() {
       h += 'Otherwise, please open this page in Chrome, Firefox, Safari 17+, or Edge.</div>';
     }
 
-    h += '<button class="hv-btn hv-btn-gold" onclick="startPayment()">Pay $0.50 & Begin Verification →</button>';
+    h += '<button class="hv-btn hv-btn-gold" onclick="startPayment()">Pay $1.00 & Begin Verification →</button>';
 
     // ── Other lanes ──
     h += '<div class="hv-divider"></div>';
@@ -501,7 +501,7 @@ function render() {
 // ── Actions ──
 
 // S25: Stripe Payment Link
-var STRIPE_PAYMENT_URL = "https://buy.stripe.com/14AfZj1Rk36D8uCfgp5Vu00";
+var STRIPE_PAYMENT_URL = "https://buy.stripe.com/aFabJ33Zs6iPdOW6JT5Vu01";
 
 async function startPayment() {
   // S25: Block payment if crypto won't work — don't take money for a flow that will fail
