@@ -291,11 +291,27 @@ var state = {
   verificationProof: null,
   pollCount: 0,
   returnStatus: null,
+  transferCode: null,
+  transferKey: null,
 };
+
+// S27: Check for QR transfer request (hash fragment: #transfer=CODE&key=KEY)
+var xferHash = window.location.hash;
+if (xferHash && xferHash.indexOf("#transfer=") === 0) {
+  var xferParams = new URLSearchParams(xferHash.substring(1));
+  var xferCode = xferParams.get("transfer");
+  var xferKey = xferParams.get("key");
+  if (xferCode && xferKey) {
+    state.transferCode = xferCode;
+    state.transferKey = xferKey;
+    state.phase = "transfer";
+  }
+  window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+}
 
 // Check for existing credential
 var existingCred = loadCredFromStorage();
-if (existingCred && existingCred.version === "hip-credential-v1") {
+if (existingCred && existingCred.version === "hip-credential-v1" && state.phase !== "transfer") {
   state.phase = "existing";
 }
 
@@ -493,6 +509,34 @@ function render() {
     h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">' + (state.error || "An unknown error occurred.") + '</p>';
     h += '<button class="hv-btn" onclick="resetFlow()">Try Again</button>';
     h += '<div style="margin-top:12px"><a href="https://hipprotocol.org" style="font-size:13px;color:#888">← Return to hipprotocol.org</a></div>';
+
+  } else if (state.phase === "transfer") {
+    var xCred = loadCredFromStorage();
+    if (!xCred || xCred.version !== "hip-credential-v1") {
+      h += '<div class="hv-badge" style="border-color:rgba(220,38,38,0.3);color:#dc2626">● No Credential</div>';
+      h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">No credential on this device</h1>';
+      h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">This device doesn\'t have a HIP credential to transfer. Complete verification first, then try again.</p>';
+      h += '<button class="hv-btn" onclick="resetFlow()">Get a Credential</button>';
+    } else {
+      var xTn = xCred.tier === 1 ? "Tier 1 — Government ID" : xCred.tier === 2 ? "Tier 2 — Biometric" : xCred.tier === 3 ? "Tier 3 — Peer Vouch" : "Credential";
+      h += '<div class="hv-badge" style="border-color:rgba(37,99,235,0.3);color:#2563eb">↗ Transfer</div>';
+      h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Send credential to another device</h1>';
+      h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your credential will be encrypted and sent securely. Only the device showing the QR code can decrypt it.</p>';
+      h += '<div class="hv-result">';
+      h += '<div class="hv-result-row"><span class="hv-result-label">Credential</span><span class="hv-result-val">' + xTn + '</span></div>';
+      h += '<div class="hv-result-row"><span class="hv-result-label">ID</span><span class="hv-result-val">' + xCred.credentialId.substring(0, 16) + '…</span></div>';
+      h += '</div>';
+      h += '<div id="xfer-status"></div>';
+      h += '<button class="hv-btn hv-btn-gold" id="xfer-btn" onclick="doTransfer()">Send Credential →</button>';
+      h += '<div class="hv-alert hv-alert-blue" style="margin-top:16px"><strong>Secure transfer:</strong> Your credential is encrypted in this browser before being sent. The relay server only ever sees encrypted data it cannot read. The encryption key never leaves your devices.</div>';
+    }
+
+  } else if (state.phase === "transfer-done") {
+    h += '<div class="hv-badge" style="border-color:rgba(22,163,74,0.3);color:#16a34a">✓ Sent</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Credential sent</h1>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your credential has been securely transferred. It should appear on the other device within a few seconds.</p>';
+    h += '<div class="hv-alert hv-alert-green">✓ <strong>Transfer complete.</strong> The encrypted relay data has been deleted from the server.</div>';
+    h += '<a href="https://hipprotocol.org" class="hv-btn hv-btn-outline" style="text-decoration:none;margin-top:12px">← Return to hipprotocol.org</a>';
   }
 
   app.innerHTML = h;
@@ -678,7 +722,75 @@ function resetFlow() {
   state.sessionId = null;
   state.error = null;
   state.pollCount = 0;
+  state.transferCode = null;
+  state.transferKey = null;
   render();
+}
+
+// S27: QR Transfer — encrypt credential and push to relay
+async function doTransfer() {
+  var btn = document.getElementById("xfer-btn");
+  var statusEl = document.getElementById("xfer-status");
+  if (btn) btn.disabled = true;
+  if (btn) btn.textContent = "Encrypting…";
+
+  try {
+    var cred = loadCredFromStorage();
+    if (!cred) throw new Error("No credential found");
+
+    // Prepare credential for transfer (same as backup — exclude CryptoKey objects)
+    var obj = Object.assign({}, cred);
+    delete obj._priv;
+    delete obj._pub;
+    var plaintext = JSON.stringify(obj);
+
+    // Decode the base64url key from the QR URL
+    var keyB64 = state.transferKey.replace(/-/g, "+").replace(/_/g, "/");
+    while (keyB64.length % 4 !== 0) keyB64 += "=";
+    var keyBytes = Uint8Array.from(atob(keyB64), function(c) { return c.charCodeAt(0); });
+
+    // Import as AES-GCM key
+    var aesKey = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
+
+    // Generate random IV
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+
+    // Encrypt
+    var cipherBuf = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv: iv },
+      aesKey,
+      new TextEncoder().encode(plaintext)
+    );
+
+    // Pack as base64: iv (12 bytes) + ciphertext
+    var packed = new Uint8Array(iv.length + cipherBuf.byteLength);
+    packed.set(iv, 0);
+    packed.set(new Uint8Array(cipherBuf), iv.length);
+    var encoded = btoa(String.fromCharCode.apply(null, packed));
+
+    if (btn) btn.textContent = "Sending…";
+
+    // Push to relay
+    var resp = await fetch(WORKER_URL + "/transfer/" + state.transferCode, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ encrypted: encoded }),
+    });
+
+    if (!resp.ok) {
+      var errData = await resp.json().catch(function() { return {}; });
+      throw new Error(errData.error || "Transfer failed (HTTP " + resp.status + ")");
+    }
+
+    state.phase = "transfer-done";
+    render();
+
+  } catch (ex) {
+    if (statusEl) {
+      statusEl.innerHTML = '<div class="hv-alert hv-alert-red" style="margin-bottom:12px"><strong>Transfer failed:</strong> ' + ex.message + '</div>';
+    }
+    if (btn) { btn.disabled = false; btn.textContent = "Retry →"; }
+  }
 }
 
 // ── Init ──
