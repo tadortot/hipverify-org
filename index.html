@@ -738,31 +738,23 @@ async function doTransfer() {
     var cred = loadCredFromStorage();
     if (!cred) throw new Error("No credential found");
 
-    // Prepare credential for transfer (same as backup — exclude CryptoKey objects)
     var obj = Object.assign({}, cred);
     delete obj._priv;
     delete obj._pub;
     var plaintext = JSON.stringify(obj);
 
-    // Decode the base64url key from the QR URL
     var keyB64 = state.transferKey.replace(/-/g, "+").replace(/_/g, "/");
     while (keyB64.length % 4 !== 0) keyB64 += "=";
     var keyBytes = Uint8Array.from(atob(keyB64), function(c) { return c.charCodeAt(0); });
 
-    // Import as AES-GCM key
     var aesKey = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
-
-    // Generate random IV
     var iv = crypto.getRandomValues(new Uint8Array(12));
-
-    // Encrypt
     var cipherBuf = await crypto.subtle.encrypt(
       { name: "AES-GCM", iv: iv },
       aesKey,
       new TextEncoder().encode(plaintext)
     );
 
-    // Pack as base64: iv (12 bytes) + ciphertext
     var packed = new Uint8Array(iv.length + cipherBuf.byteLength);
     packed.set(iv, 0);
     packed.set(new Uint8Array(cipherBuf), iv.length);
@@ -770,7 +762,6 @@ async function doTransfer() {
 
     if (btn) btn.textContent = "Sending…";
 
-    // Push to relay
     var resp = await fetch(WORKER_URL + "/transfer/" + state.transferCode, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
