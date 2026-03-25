@@ -12,22 +12,22 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✓</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600&family=Azeret+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ── Reset & Base ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
-  background:#faf9f7;
-  font-family:'DM Sans','Helvetica Neue',sans-serif;
+  background:#F8F7F5;
+  font-family:'Outfit','Helvetica Neue',sans-serif;
   color:#1a1a1a;
   min-height:100vh;
   -webkit-font-smoothing:antialiased;
 }
-a{color:#b8860b;text-decoration:none}
+a{color:#2563eb;text-decoration:none}
 a:hover{text-decoration:underline}
-::selection{background:rgba(184,134,11,0.15);color:#1a1a1a}
-code{font-family:'DM Mono','SF Mono',monospace;font-size:12px;color:#666}
+::selection{background:rgba(37,99,235,0.15);color:#1a1a1a}
+code{font-family:'Azeret Mono','SF Mono',monospace;font-size:12px;color:#666}
 
 /* ── Layout ── */
 .hv-nav{
@@ -39,27 +39,27 @@ code{font-family:'DM Mono','SF Mono',monospace;font-size:12px;color:#666}
   position:sticky;top:0;z-index:100;
 }
 .hv-nav-brand{
-  font-family:'DM Mono',monospace;font-size:13px;font-weight:500;
+  font-family:'Azeret Mono',monospace;font-size:13px;font-weight:500;
   letter-spacing:1px;color:#1a1a1a;
   display:flex;align-items:center;gap:8px;
 }
 .hv-nav-brand span{
   display:inline-flex;align-items:center;justify-content:center;
   width:26px;height:26px;border-radius:50%;
-  background:#b8860b;color:#fff;font-size:12px;font-weight:700;
+  background:#2563eb;color:#fff;font-size:12px;font-weight:700;
 }
 .hv-nav-links{display:flex;gap:20px;align-items:center}
-.hv-nav-links a{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.5px;color:#666}
+.hv-nav-links a{font-family:'Azeret Mono',monospace;font-size:11px;letter-spacing:0.5px;color:#666}
 .hv-nav-links a:hover{color:#1a1a1a;text-decoration:none}
 
 .hv-main{max-width:640px;margin:0 auto;padding:48px 24px 80px}
 
 /* ── Typography ── */
-.hv-serif{font-family:'Instrument Serif',Georgia,serif}
-.hv-mono{font-family:'DM Mono','SF Mono',monospace}
+.hv-serif{font-family:'Space Grotesk',Georgia,sans-serif}
+.hv-mono{font-family:'Azeret Mono','SF Mono',monospace}
 
 .hv-hero-title{
-  font-family:'Instrument Serif',Georgia,serif;
+  font-family:'Space Grotesk',Georgia,sans-serif;
   font-size:clamp(36px,7vw,56px);font-weight:400;
   color:#1a1a1a;line-height:1.1;margin-bottom:16px;
 }
@@ -68,9 +68,9 @@ code{font-family:'DM Mono','SF Mono',monospace;font-size:12px;color:#666}
 /* ── Components ── */
 .hv-badge{
   display:inline-flex;align-items:center;gap:6px;
-  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;
-  text-transform:uppercase;color:#b8860b;
-  padding:5px 12px;border:1px solid rgba(184,134,11,0.25);border-radius:100px;
+  font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:#2563eb;
+  padding:5px 12px;border:1px solid rgba(37,99,235,0.25);border-radius:100px;
   margin-bottom:20px;
 }
 .hv-card{
@@ -80,7 +80,7 @@ code{font-family:'DM Mono','SF Mono',monospace;font-size:12px;color:#666}
   box-shadow:0 1px 3px rgba(0,0,0,0.03);
 }
 .hv-card-title{
-  font-family:'DM Mono',monospace;font-size:12px;font-weight:600;
+  font-family:'Azeret Mono',monospace;font-size:12px;font-weight:600;
   color:#1a1a1a;margin-bottom:6px;
   display:flex;align-items:center;gap:8px;
 }
@@ -97,9 +97,9 @@ code{font-family:'DM Mono','SF Mono',monospace;font-size:12px;color:#666}
 
 .hv-btn{
   display:block;width:100%;
-  font-family:'DM Mono',monospace;font-size:13px;letter-spacing:0.5px;
+  font-family:'Azeret Mono',monospace;font-size:13px;letter-spacing:0.5px;
   padding:14px 24px;
-  background:#1a1a1a;color:#faf9f7;
+  background:#1a1a1a;color:#F8F7F5;
   border-radius:8px;font-weight:500;border:none;cursor:pointer;
   text-align:center;text-decoration:none;
   transition:background 0.2s,transform 0.1s;
@@ -114,11 +114,11 @@ code{font-family:'DM Mono','SF Mono',monospace;font-size:12px;color:#666}
 }
 .hv-btn-outline:hover{background:rgba(0,0,0,0.03)}
 
-.hv-btn-gold{background:#b8860b;color:#fff}
-.hv-btn-gold:hover{background:#a07609}
+.hv-btn-gold{background:#2563eb;color:#fff}
+.hv-btn-gold:hover{background:#1d4ed8}
 
 .hv-result{
-  background:#faf9f7;border:1px solid rgba(0,0,0,0.06);
+  background:#F8F7F5;border:1px solid rgba(0,0,0,0.06);
   border-radius:8px;padding:14px 16px;margin-bottom:16px;
 }
 .hv-result-row{
@@ -127,11 +127,11 @@ code{font-family:'DM Mono','SF Mono',monospace;font-size:12px;color:#666}
 }
 .hv-result-row:last-child{border-bottom:none}
 .hv-result-label{
-  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;
+  font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:1px;
   text-transform:uppercase;color:#888;flex-shrink:0;margin-right:12px;
 }
 .hv-result-val{
-  font-family:'DM Mono',monospace;font-size:11px;color:#1a1a1a;
+  font-family:'Azeret Mono',monospace;font-size:11px;color:#1a1a1a;
   text-align:right;word-break:break-all;
 }
 
@@ -149,19 +149,19 @@ code{font-family:'DM Mono','SF Mono',monospace;font-size:12px;color:#666}
 .hv-step-dot{
   width:28px;height:28px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
-  font-family:'DM Mono',monospace;font-size:12px;font-weight:600;
+  font-family:'Azeret Mono',monospace;font-size:12px;font-weight:600;
   flex-shrink:0;margin-top:2px;
 }
 .hv-dot-pending{background:rgba(0,0,0,0.04);color:#aaa;border:1px solid rgba(0,0,0,0.08)}
-.hv-dot-active{background:#1a1a1a;color:#faf9f7}
+.hv-dot-active{background:#1a1a1a;color:#F8F7F5}
 .hv-dot-done{background:rgba(22,163,74,0.08);color:#16a34a;border:1px solid rgba(22,163,74,0.15)}
-.hv-step-title{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:3px}
+.hv-step-title{font-family:'Azeret Mono',monospace;font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:3px}
 .hv-step-text{font-size:13px;color:#777;line-height:1.6}
 
 /* ── Sections ── */
 .hv-section-label{
-  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;
-  text-transform:uppercase;color:#b8860b;margin-bottom:14px;
+  font-family:'Azeret Mono',monospace;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:#2563eb;margin-bottom:14px;
 }
 
 /* ── Footer ── */
@@ -169,7 +169,7 @@ code{font-family:'DM Mono','SF Mono',monospace;font-size:12px;color:#666}
   text-align:center;padding:40px 24px;font-size:12px;color:#999;
   border-top:1px solid rgba(0,0,0,0.06);margin-top:40px;
 }
-.hv-footer a{color:#b8860b}
+.hv-footer a{color:#2563eb}
 
 /* ── Lane selector ── */
 .hv-lane{
@@ -177,19 +177,28 @@ code{font-family:'DM Mono','SF Mono',monospace;font-size:12px;color:#666}
   background:#fff;margin-bottom:12px;cursor:pointer;
   transition:border-color 0.15s,box-shadow 0.15s;
 }
-.hv-lane:hover{border-color:rgba(184,134,11,0.3);box-shadow:0 2px 8px rgba(0,0,0,0.04)}
-.hv-lane-active{border-color:#b8860b;box-shadow:0 0 0 1px #b8860b}
+.hv-lane:hover{border-color:rgba(37,99,235,0.3);box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.hv-lane-active{border-color:#2563eb;box-shadow:0 0 0 1px #2563eb}
 .hv-lane-header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 .hv-lane-dot{
   width:10px;height:10px;border-radius:50%;flex-shrink:0;
 }
-.hv-lane-title{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:#1a1a1a}
+.hv-lane-title{font-family:'Azeret Mono',monospace;font-size:13px;font-weight:600;color:#1a1a1a}
 .hv-lane-text{font-size:13px;color:#777;line-height:1.6;padding-left:20px}
 .hv-lane-tag{
-  display:inline-block;font-family:'DM Mono',monospace;
+  display:inline-block;font-family:'Azeret Mono',monospace;
   font-size:10px;letter-spacing:0.5px;padding:2px 8px;
   border-radius:4px;margin-left:20px;margin-top:6px;
 }
+
+/* ── Legal pages ── */
+.hv-legal h2{font-family:'Space Grotesk',Georgia,sans-serif;font-size:clamp(28px,5vw,40px);font-weight:400;color:#1a1a1a;margin-bottom:8px}
+.hv-legal h3{font-family:'Outfit',sans-serif;font-size:16px;font-weight:600;color:#1a1a1a;margin:28px 0 8px}
+.hv-legal p,.hv-legal li{font-size:14px;color:#555;line-height:1.75;margin-bottom:10px}
+.hv-legal ul{padding-left:20px;margin-bottom:14px}
+.hv-legal li{margin-bottom:6px}
+.hv-legal .hv-legal-meta{font-family:'Azeret Mono',monospace;font-size:11px;color:#999;margin-bottom:24px}
+.hv-legal a{color:#2563eb}
 
 /* ── Responsive ── */
 @media(max-width:480px){
@@ -220,7 +229,7 @@ code{font-family:'DM Mono','SF Mono',monospace;font-size:12px;color:#666}
 <div class="hv-footer">
   <strong style="color:#555">HIP Verify</strong> — Independent Tier 1 pathway operator<br>
   <span style="margin-top:4px;display:inline-block">
-    Operating under <a href="https://hipprotocol.org" target="_blank" rel="noopener">HIP</a> DP-5 (Permissionless Proliferation).
+    Operating under <a href="https://hipprotocol.org" target="_blank" rel="noopener" style="text-decoration:none"><span style="font-family:'Azeret Mono',monospace;font-weight:600;letter-spacing:2px;color:#1a1a1a">HIP</span><span style="font-family:'Azeret Mono',monospace;font-weight:600;color:#E05A00">://</span></a> DP-5 (Permissionless Proliferation).
     Not affiliated with or operated by the HIP protocol itself.
   </span><br>
   <span style="margin-top:4px;display:inline-block;color:#bbb">
@@ -228,7 +237,7 @@ code{font-family:'DM Mono','SF Mono',monospace;font-size:12px;color:#666}
     Your personal data is never stored — only a one-way deduplication hash.
   </span><br>
   <span style="margin-top:8px;display:inline-block">
-    <a href="#terms">Terms of Service</a> · <a href="#privacy">Privacy Policy</a> · <a href="https://hipprotocol.org" target="_blank">HIP Protocol</a>
+    <a href="#terms" onclick="window.location.hash='terms';return false;">Terms of Service</a> · <a href="#privacy" onclick="window.location.hash='privacy';return false;">Privacy Policy</a> · <a href="https://hipprotocol.org" target="_blank" rel="noopener" style="text-decoration:none"><span style="font-family:'Azeret Mono',monospace;font-size:13px;font-weight:600;letter-spacing:2px;color:#1a1a1a">HIP</span><span style="font-family:'Azeret Mono',monospace;font-size:13px;font-weight:600;color:#E05A00">://</span></a>
   </span>
 </div>
 
@@ -283,7 +292,7 @@ function buildTransferUrl(cred) {
 
 // ── State ──
 var state = {
-  phase: "start",  // start | payment | verifying | polling | creating | done | error | duplicate | existing
+  phase: "start",  // start | payment | verifying | polling | creating | done | error | duplicate | existing | recovery-done
   sessionId: null,
   error: null,
   credential: null,
@@ -293,7 +302,24 @@ var state = {
   returnStatus: null,
   transferCode: null,
   transferKey: null,
+  recoveryMode: false, // S33: credential recovery via re-verification
 };
+
+// S33: Check for recovery mode (?mode=recovery)
+var urlParamsInit = new URLSearchParams(window.location.search);
+var modeParam = urlParamsInit.get("mode");
+if (modeParam === "recovery") {
+  state.recoveryMode = true;
+  // Persist recovery mode across redirects (Stripe → Didit → back)
+  try { localStorage.setItem("hip_recovery_mode", "true"); } catch(e) {}
+} else {
+  // Check if we're returning from a redirect during recovery
+  try {
+    if (localStorage.getItem("hip_recovery_mode") === "true") {
+      state.recoveryMode = true;
+    }
+  } catch(e) {}
+}
 
 // S27: Check for QR transfer request (hash fragment: #transfer=CODE&key=KEY)
 var xferHash = window.location.hash;
@@ -309,17 +335,23 @@ if (xferHash && xferHash.indexOf("#transfer=") === 0) {
   window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
 }
 
-// Check for existing credential
+// Check for existing credential (skip in recovery mode — user is intentionally re-verifying)
 var existingCred = loadCredFromStorage();
-if (existingCred && existingCred.version === "hip-credential-v1" && state.phase !== "transfer") {
+if (existingCred && existingCred.version === "hip-credential-v1" && state.phase !== "transfer" && !state.recoveryMode) {
   state.phase = "existing";
+}
+
+// Check for legal page hash routes (overrides existing credential screen)
+var legalHash = window.location.hash;
+if (legalHash === "#terms" || legalHash === "#privacy") {
+  state.phase = legalHash.substring(1); // "terms" or "privacy"
 }
 
 // Check URL params for callback return from Didit
 var urlParams = new URLSearchParams(window.location.search);
 var returnSessionId = urlParams.get("session_id") || urlParams.get("verificationSessionId");
 var returnStatus = urlParams.get("status");
-if (returnSessionId && state.phase !== "existing") {
+if (returnSessionId && (state.phase !== "existing" || state.recoveryMode)) {
   // Didit may return a different ID than the worker session_id.
   // Use the persisted worker session_id for polling (that's what the webhook stores under).
   var pendingSession = null;
@@ -334,7 +366,7 @@ if (returnSessionId && state.phase !== "existing") {
 
 // S25: Check for Stripe payment return
 var paymentSuccess = urlParams.get("payment");
-if (paymentSuccess === "success" && state.phase !== "existing" && state.phase !== "polling") {
+if (paymentSuccess === "success" && (state.phase !== "existing" || state.recoveryMode) && state.phase !== "polling") {
   state.phase = "verifying";
   window.history.replaceState({}, document.title, window.location.pathname);
 }
@@ -368,7 +400,7 @@ function render() {
 
   if (state.phase === "existing") {
     var ec = existingCred;
-    var tn = ec.tier === 1 ? "Tier 1 — Government ID" : ec.tier === 2 ? "Tier 2 — Biometric" : ec.tier === 3 ? "Tier 3 — Peer Vouch" : "Credential";
+    var tn = ec.tier === 1 ? "Tier 1 — Government ID" : ec.tier === 2 ? "Tier 2 — Peer Vouch" : ec.tier === 3 ? "Tier 3 — Device Biometric" : "Credential";
     h += '<div class="hv-badge">● Existing Credential</div>';
     h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">You already have a credential</h1>';
     h += '<p class="hv-hero-sub">HIP follows a one-credential-per-human principle. You have an active ' + tn + ' credential saved in this browser.</p>';
@@ -386,19 +418,32 @@ function render() {
 
   } else if (state.phase === "start") {
     // ── Hero ──
-    h += '<div class="hv-badge">✓ Independent Pathway Operator</div>';
-    h += '<h1 class="hv-hero-title">Tier 1 Credential</h1>';
-    h += '<p class="hv-hero-sub">Verify your government-issued ID to receive the highest assurance HIP credential. Your identity is confirmed, then forgotten — only a one-way hash remains.</p>';
+    if (state.recoveryMode) {
+      h += '<div class="hv-badge" style="border-color:rgba(37,99,235,0.3);color:#2563eb">↻ Credential Recovery</div>';
+      h += '<h1 class="hv-hero-title">Recover Your Credential</h1>';
+      h += '<p class="hv-hero-sub">Lost access to your Tier 1 credential? Re-verify your identity to generate new keys. Your trust history (attestation count, age, score) will be preserved.</p>';
 
-    // ── Self-service lane ──
-    h += '<div class="hv-section-label">Self-Service Verification</div>';
-    h += '<div class="hv-card">';
-    h += '<div class="hv-step"><div class="hv-step-dot hv-dot-active">1</div><div><div class="hv-step-title">Pay verification fee</div><div class="hv-step-text">A one-time fee of <strong style="color:#1a1a1a">$1.00</strong> covers identity verification processing via Stripe.</div></div></div>';
-    h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">2</div><div><div class="hv-step-title">Verify your identity</div><div class="hv-step-text">Scan your government ID and take a selfie for liveness detection through our verification partner.</div></div></div>';
-    h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">3</div><div><div class="hv-step-title">Credential issued</div><div class="hv-step-text">Your Tier 1 credential is created in your browser and transferred to hipprotocol.org in one click.</div></div></div>';
-    h += '</div>';
+      h += '<div class="hv-card">';
+      h += '<div class="hv-step"><div class="hv-step-dot hv-dot-active">1</div><div><div class="hv-step-title">Pay verification fee</div><div class="hv-step-text">A one-time fee of <strong style="color:#1a1a1a">$1.00</strong> covers re-verification processing.</div></div></div>';
+      h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">2</div><div><div class="hv-step-title">Re-verify your identity</div><div class="hv-step-text">Scan the same government ID you used originally. The system matches your identity to your previous credential.</div></div></div>';
+      h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">3</div><div><div class="hv-step-title">New keys issued</div><div class="hv-step-text">A new key pair is generated and linked to your trust history. Your old credential is marked as superseded.</div></div></div>';
+      h += '</div>';
 
-    h += '<div class="hv-alert hv-alert-amber"><strong>About the fee:</strong> HIP is a free protocol. This $1.00 fee covers the cost of third-party identity verification and payment processing. It is paid to HIP Verify, not to the HIP protocol. <a href="https://hipprotocol.org" style="color:#d97706">Tier 2 and Tier 3 are free on hipprotocol.org.</a></div>';
+      h += '<div class="hv-alert hv-alert-blue"><strong>How recovery works:</strong> Your identity is matched to your previous credential using the same one-way deduplication hash. A new cryptographic key pair is generated, and your trust record (attestation count, credential age, trust score) is migrated to the new credential. Proof Cards signed with your old credential remain valid.</div>';
+
+    } else {
+      h += '<div class="hv-badge">✓ Independent Pathway Operator</div>';
+      h += '<h1 class="hv-hero-title">Tier 1 Credential</h1>';
+      h += '<p class="hv-hero-sub">Verify your government-issued ID to receive the highest assurance HIP credential. Your identity is confirmed, then forgotten — only a one-way hash remains.</p>';
+
+      // ── Self-service lane ──
+      h += '<div class="hv-section-label">Self-Service Verification</div>';
+      h += '<div class="hv-card">';
+      h += '<div class="hv-step"><div class="hv-step-dot hv-dot-active">1</div><div><div class="hv-step-title">Pay verification fee</div><div class="hv-step-text">A one-time fee of <strong style="color:#1a1a1a">$1.00</strong> covers identity verification processing via Stripe. <a href="#about-fee" onclick="var el=document.getElementById(\'about-fee\');if(el){var y=el.getBoundingClientRect().top+window.pageYOffset-70;window.scrollTo({top:y,behavior:\'smooth\'});}return false;" style="font-size:12px">Why does this cost money?*</a></div></div></div>';
+      h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">2</div><div><div class="hv-step-title">Verify your identity</div><div class="hv-step-text">Scan your government ID and take a selfie for liveness detection through our verification partner.</div></div></div>';
+      h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">3</div><div><div class="hv-step-title">Credential issued</div><div class="hv-step-text">Your Tier 1 credential is created in your browser and transferred to hipprotocol.org in one click.</div></div></div>';
+      h += '</div>';
+    }
 
     // S25: Crypto capability warning
     if (HIP_CRYPTO_OK === false) {
@@ -407,17 +452,32 @@ function render() {
       h += 'Otherwise, please open this page in Chrome, Firefox, Safari 17+, or Edge.</div>';
     }
 
-    h += '<button class="hv-btn hv-btn-gold" onclick="startPayment()">Pay $1.00 & Begin Verification →</button>';
+    h += '<button class="hv-btn hv-btn-gold" onclick="startPayment()">' + (state.recoveryMode ? 'Pay $1.00 & Re-Verify Identity →' : 'Pay $1.00 & Begin Verification →') + '</button>';
 
-    // ── Other lanes ──
+    if (!state.recoveryMode) {
+    // ── Other Verification Paths ──
     h += '<div class="hv-divider"></div>';
     h += '<div class="hv-section-label" id="institutional">Other Verification Paths</div>';
+    h += '<p style="font-size:14px;color:#555;line-height:1.7;margin-bottom:16px">Self-service isn\'t the only way to get a Tier 1 credential. You can also be verified through your institution, or get started with HIP at no cost using a different credential tier.</p>';
 
-    h += '<div class="hv-lane" onclick="void(0)" style="cursor:default">';
-    h += '<div class="hv-lane-header"><div class="hv-lane-dot" style="background:#2563eb"></div><div class="hv-lane-title">Institutional Verification</div></div>';
-    h += '<div class="hv-lane-text">If your organization operates a HIP-compatible verification service, they can issue your Tier 1 credential directly — no fee required. Ask your institution if they support HIP credentialing.</div>';
+    h += '<a href="https://hipprotocol.org" target="_blank" rel="noopener" class="hv-lane" style="display:block;text-decoration:none;color:inherit">';
+    h += '<div class="hv-lane-header"><div class="hv-lane-dot" style="background:#16a34a"></div><div class="hv-lane-title">Tier 3 — Device Biometric <span style="font-size:11px;font-weight:400;color:#16a34a">↗ hipprotocol.org</span></div></div>';
+    h += '<div class="hv-lane-text">Try HIP at no cost. Use Face ID, Touch ID, or Windows Hello to create a credential instantly. Lower starting trust score, but full access to attestation and verification.</div>';
+    h += '<div class="hv-lane-text" style="margin-top:6px;font-size:12px;color:#999"><strong style="color:#777">Note:</strong> Tier upgrade with trust migration (keeping your attestation history when moving to Tier 1) is coming soon. For now, attestations made with a Tier 3 credential stay with that credential. If you plan to use HIP long-term, starting with Tier 1 avoids a future migration step.</div>';
+    h += '<div class="hv-lane-tag" style="background:rgba(22,163,74,0.06);color:#16a34a">No Cost · Instant</div>';
+    h += '</a>';
+
+    h += '<a href="https://hipprotocol.org" target="_blank" rel="noopener" class="hv-lane" style="display:block;text-decoration:none;color:inherit">';
+    h += '<div class="hv-lane-header"><div class="hv-lane-dot" style="background:#d97706"></div><div class="hv-lane-title">Tier 2 — Peer Vouch <span style="font-size:11px;font-weight:400;color:#d97706">↗ hipprotocol.org</span></div></div>';
+    h += '<div class="hv-lane-text">A Tier 1 credential holder vouches for you on hipprotocol.org. No fee, no ID scan — just a cryptographic endorsement from someone already in the network.</div>';
+    h += '<div class="hv-lane-tag" style="background:rgba(217,119,6,0.06);color:#d97706">No Cost · Requires Voucher</div>';
+    h += '</a>';
+
+    h += '<a href="https://hipprotocol.org#build" target="_blank" rel="noopener" class="hv-lane" style="display:block;text-decoration:none;color:inherit">';
+    h += '<div class="hv-lane-header"><div class="hv-lane-dot" style="background:#2563eb"></div><div class="hv-lane-title">Institutional Verification <span style="font-size:11px;font-weight:400;color:#2563eb">↗ API docs</span></div></div>';
+    h += '<div class="hv-lane-text">Organizations that perform their own government ID verification (universities, employers, government agencies) can issue Tier 1 credentials directly through the HIP Verify API — no fee for the end user.</div>';
     h += '<div class="hv-lane-tag" style="background:rgba(37,99,235,0.06);color:#2563eb">API Available</div>';
-    h += '</div>';
+    h += '</a>';
 
     h += '<div class="hv-lane" onclick="void(0)" style="cursor:default">';
     h += '<div class="hv-lane-header"><div class="hv-lane-dot" style="background:#888"></div><div class="hv-lane-title">Third-Party IDV Providers</div></div>';
@@ -435,12 +495,23 @@ function render() {
     h += '<div style="font-size:14px;color:#555;line-height:1.75"><strong style="color:#1a1a1a">What you get:</strong> A cryptographic key pair generated entirely in your browser. The private key never leaves your device. Your credential is saved to localStorage and auto-loads on hipprotocol.org. You can download a backup file for safekeeping.</div>';
     h += '</div>';
 
-    // ── Charter compliance ──
-    h += '<div class="hv-card" style="background:rgba(184,134,11,0.02);border-color:rgba(184,134,11,0.12)">';
-    h += '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:1px;color:#b8860b;margin-bottom:8px;text-transform:uppercase">Charter Compliance</div>';
-    h += '<div style="font-size:13px;color:#555;line-height:1.7;margin-bottom:8px"><strong style="color:#1a1a1a">DP-5 — Permissionless Proliferation:</strong> "Any actor may build tools, integrate HIP, display Proofcards, host Bundles, or create verification interfaces without permission."</div>';
-    h += '<div style="font-size:13px;color:#555;line-height:1.7"><strong style="color:#1a1a1a">DP-7 — Zero Institutional Cost:</strong> "If it costs money, it\'s not the protocol — it\'s an institution choosing to invest in its own implementation." HIP Verify is that institution. The protocol itself remains free.</div>';
+    // ── About the fee ──
+    h += '<div class="hv-divider"></div>';
+    h += '<div class="hv-section-label" id="about-fee">About the Verification Fee</div>';
+    h += '<div class="hv-card">';
+    h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px">Verifying a government ID costs money — there\'s no way around it. The $1.00 fee covers third-party identity verification processing and payment handling. It is <strong style="color:#1a1a1a">not a subscription</strong> — you pay once and your credential is yours for life.</div>';
+    h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px">This fee goes to <strong style="color:#1a1a1a">HIP Verify</strong> (this site), not to the HIP protocol. The protocol itself collects no fees — its Charter explicitly forbids it (DP-7).</div>';
+    h += '<div style="font-size:14px;color:#555;line-height:1.75">Want to try HIP before committing? <a href="https://hipprotocol.org">Create a Tier 3 credential on hipprotocol.org</a> at no cost. You get full access to attestation and verification. You can upgrade to Tier 1 anytime.</div>';
     h += '</div>';
+
+    // ── Charter compliance ──
+    h += '<div class="hv-divider"></div>';
+    h += '<div class="hv-section-label">Charter Compliance</div>';
+    h += '<div class="hv-card">';
+    h += '<div style="font-size:13px;color:#555;line-height:1.7;margin-bottom:8px"><strong style="color:#1a1a1a">DP-5 — Permissionless Proliferation:</strong> "Any actor may build tools, integrate HIP, display Proofcards, host Bundles, or create verification interfaces without permission."</div>';
+    h += '<div style="font-size:13px;color:#555;line-height:1.7"><strong style="color:#1a1a1a">DP-7 — Zero Institutional Cost:</strong> "If it costs money, it\'s not the protocol — it\'s an institution choosing to invest in its own implementation." HIP Verify is that institution.</div>';
+    h += '</div>';
+    } // end if (!state.recoveryMode)
 
   } else if (state.phase === "payment") {
     h += '<div class="hv-badge">● Step 1 of 3</div>';
@@ -486,21 +557,45 @@ function render() {
     h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:12px" onclick="downloadBackup()">↓ Download Backup Copy</button>';
     h += '<div class="hv-alert hv-alert-amber"><strong>Keep your backup.</strong> Your credential is also saved in this browser, but if you clear site data, switch browsers, or use a different device, you\'ll need the backup file to restore it.</div>';
 
+  } else if (state.phase === "recovery-done") {
+    // S33: Successful credential recovery
+    var c = state.credential;
+    var transferUrl = buildTransferUrl(c);
+    h += '<div class="hv-badge" style="border-color:rgba(22,163,74,0.3);color:#16a34a">✓ Credential Recovered</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Your credential has been recovered</h1>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your identity was re-verified and a new credential has been issued. Your trust history has been migrated to the new credential.</p>';
+    h += '<div class="hv-alert hv-alert-green">✓ <strong>Recovery complete.</strong> Your attestation count, credential age, and trust score have been preserved. Proof Cards signed with your old credential remain valid.</div>';
+    h += '<div class="hv-result">';
+    h += '<div class="hv-result-row"><span class="hv-result-label">Tier</span><span class="hv-result-val">Tier 1 — Government ID</span></div>';
+    h += '<div class="hv-result-row"><span class="hv-result-label">New Credential ID</span><span class="hv-result-val">' + c.credentialId + '</span></div>';
+    if (c.recoveredFrom) {
+      h += '<div class="hv-result-row"><span class="hv-result-label">Recovered From</span><span class="hv-result-val">' + c.recoveredFrom + '</span></div>';
+    }
+    if (state.recoveryTrustScore !== null && state.recoveryTrustScore !== undefined) {
+      h += '<div class="hv-result-row"><span class="hv-result-label">Trust Score</span><span class="hv-result-val">' + state.recoveryTrustScore + ' / 100 (migrated)</span></div>';
+    }
+    h += '<div class="hv-result-row"><span class="hv-result-label">Recovered</span><span class="hv-result-val">' + new Date(c.recoveredAt).toLocaleString() + '</span></div>';
+    h += '</div>';
+    h += '<a href="' + transferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Transfer to hipprotocol.org →</a>';
+    h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:12px" onclick="downloadBackup()">↓ Download Backup Copy</button>';
+    h += '<div class="hv-alert hv-alert-amber"><strong>Save your backup this time!</strong> Download a backup copy of your new credential file and store it somewhere safe. If you lose access again, you can recover — but it costs another verification fee.</div>';
+
   } else if (state.phase === "duplicate") {
     h += '<div class="hv-badge" style="border-color:rgba(217,119,6,0.3);color:#d97706">● Duplicate Detected</div>';
     h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Identity already verified</h1>';
     h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">This government ID has already been used to create a Tier 1 credential. HIP enforces one credential per human.</p>';
-    h += '<div class="hv-alert hv-alert-blue"><strong>What to do:</strong> If you already have your credential file, import it on hipprotocol.org. If you\'ve lost access, credential recovery via re-verification will be available in a future update.</div>';
+    h += '<div class="hv-alert hv-alert-blue"><strong>Lost your credential?</strong> You can recover it by re-verifying your identity. This will generate new keys while preserving your trust history.</div>';
     if (state.existingCredentialId) {
       h += '<div class="hv-result"><div class="hv-result-row"><span class="hv-result-label">Existing Credential</span><span class="hv-result-val">' + state.existingCredentialId + '</span></div></div>';
     }
+    h += '<button class="hv-btn hv-btn-gold" style="margin-bottom:12px" onclick="startRecovery()">Recover My Credential →</button>';
     h += '<a href="https://hipprotocol.org" class="hv-btn hv-btn-outline" style="text-decoration:none">← Return to hipprotocol.org</a>';
 
   } else if (state.phase === "verifying") {
     h += '<div class="hv-badge" style="border-color:rgba(37,99,235,0.3);color:#2563eb">● Payment Received</div>';
     h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Starting verification...</h1>';
     h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your payment was successful. Starting identity verification — you\'ll be redirected shortly.</p>';
-    h += '<div style="text-align:center;padding:24px"><div style="display:inline-block;width:32px;height:32px;border:3px solid rgba(184,134,11,0.2);border-top-color:#b8860b;border-radius:50%;animation:spin 1s linear infinite"></div></div>';
+    h += '<div style="text-align:center;padding:24px"><div style="display:inline-block;width:32px;height:32px;border:3px solid rgba(37,99,235,0.2);border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite"></div></div>';
     h += '<style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
 
   } else if (state.phase === "error") {
@@ -518,7 +613,7 @@ function render() {
       h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">This device doesn\'t have a HIP credential to transfer. Complete verification first, then try again.</p>';
       h += '<button class="hv-btn" onclick="resetFlow()">Get a Credential</button>';
     } else {
-      var xTn = xCred.tier === 1 ? "Tier 1 — Government ID" : xCred.tier === 2 ? "Tier 2 — Biometric" : xCred.tier === 3 ? "Tier 3 — Peer Vouch" : "Credential";
+      var xTn = xCred.tier === 1 ? "Tier 1 — Government ID" : xCred.tier === 2 ? "Tier 2 — Peer Vouch" : xCred.tier === 3 ? "Tier 3 — Device Biometric" : "Credential";
       h += '<div class="hv-badge" style="border-color:rgba(37,99,235,0.3);color:#2563eb">↗ Transfer</div>';
       h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Send credential to another device</h1>';
       h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your credential will be encrypted and sent securely. Only the device showing the QR code can decrypt it.</p>';
@@ -537,6 +632,158 @@ function render() {
     h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your credential has been securely transferred. It should appear on the other device within a few seconds.</p>';
     h += '<div class="hv-alert hv-alert-green">✓ <strong>Transfer complete.</strong> The encrypted relay data has been deleted from the server.</div>';
     h += '<a href="https://hipprotocol.org" class="hv-btn hv-btn-outline" style="text-decoration:none;margin-top:12px">← Return to hipprotocol.org</a>';
+
+  } else if (state.phase === "terms") {
+    h += '<div class="hv-legal">';
+    h += '<div class="hv-badge">Legal</div>';
+    h += '<h2>Terms of Service</h2>';
+    h += '<div class="hv-legal-meta">Effective date: March 22, 2026 · Last updated: March 22, 2026</div>';
+
+    h += '<h3>1. Service Description</h3>';
+    h += '<p>HIP Verify ("the Service") is an independent pathway operator that issues Tier 1 HUMAN-PROOF credentials compatible with the Human Integrity Protocol ("HIP"). The Service verifies your identity through government-issued ID document scanning and biometric liveness detection, then issues a cryptographic credential stored in your browser.</p>';
+    h += '<p>HIP Verify is not the HIP protocol itself. It operates under HIP Charter DP-5 (Permissionless Proliferation) as a third-party service. The HIP protocol itself collects no fees. This Service charges a one-time $1.00 fee to cover third-party identity verification costs — it is not a subscription.</p>';
+
+    h += '<h3>2. Eligibility</h3>';
+    h += '<p>You must be at least 13 years old and possess a valid, unexpired government-issued photo ID to use this Service. By using the Service, you represent that you meet these requirements. Users under 18 should ensure they have appropriate permission to make online purchases.</p>';
+
+    h += '<h3>3. Verification Process</h3>';
+    h += '<p>The verification process involves:</p>';
+    h += '<ul>';
+    h += '<li><strong>Payment:</strong> A one-time fee of $1.00 USD processed through Stripe. This fee is non-refundable once identity verification has been initiated, except where required by law.</li>';
+    h += '<li><strong>Identity verification:</strong> You submit images of your government-issued ID and a live selfie. This verification is performed by our third-party provider, Didit. Your identity documents and biometric data are processed by Didit under their own privacy policy and are not stored by HIP Verify.</li>';
+    h += '<li><strong>Credential issuance:</strong> Upon successful verification, a cryptographic key pair is generated entirely in your browser. The private key never leaves your device. A one-way deduplication hash is stored server-side to enforce one credential per person.</li>';
+    h += '</ul>';
+
+    h += '<h3>4. One Credential Per Person</h3>';
+    h += '<p>HIP enforces a one-credential-per-human principle. If your government ID has already been used to create a Tier 1 credential, you will not be able to create a second one. This is enforced through a one-way deduplication hash that cannot be reversed to recover your identity.</p>';
+
+    h += '<h3>5. Your Credential</h3>';
+    h += '<p>Your credential is your responsibility. It is stored in your browser\'s localStorage and can be backed up as a JSON file. HIP Verify does not have access to your private key and cannot recover or reissue your credential if lost. You are solely responsible for maintaining backup copies.</p>';
+    h += '<p>Anyone who possesses your credential file can sign attestations as you. Treat your credential backup file with the same care as a password.</p>';
+
+    h += '<h3>6. Acceptable Use</h3>';
+    h += '<p>You agree not to:</p>';
+    h += '<ul>';
+    h += '<li>Submit fraudulent, stolen, or altered identity documents</li>';
+    h += '<li>Attempt to create multiple credentials for the same person</li>';
+    h += '<li>Attempt to circumvent the deduplication system</li>';
+    h += '<li>Use the Service for any illegal purpose</li>';
+    h += '<li>Reverse-engineer, probe, or attack the verification infrastructure</li>';
+    h += '</ul>';
+
+    h += '<h3>7. Fees and Refunds</h3>';
+    h += '<p>The verification fee is $1.00 USD. Payment is processed by Stripe. If your identity verification fails due to a technical error on our side, you may contact us for a refund. If verification fails because your documents are invalid, expired, or do not match your selfie, the fee is non-refundable — the third-party verification cost has already been incurred.</p>';
+
+    h += '<h3>8. Third-Party Services</h3>';
+    h += '<p>This Service relies on:</p>';
+    h += '<ul>';
+    h += '<li><strong>Didit</strong> for identity verification (document scanning, liveness detection, face matching). Didit processes your identity documents and biometric data under their own terms and privacy policy.</li>';
+    h += '<li><strong>Stripe</strong> for payment processing. Stripe processes your payment information under their own terms and privacy policy.</li>';
+    h += '<li><strong>Cloudflare</strong> for infrastructure (Workers, KV storage). Session data and deduplication hashes are stored in Cloudflare KV.</li>';
+    h += '</ul>';
+    h += '<p>HIP Verify is not responsible for the actions, privacy practices, or service availability of these third parties.</p>';
+
+    h += '<h3>9. Disclaimers</h3>';
+    h += '<p>The Service is provided "as is" without warranty of any kind. HIP Verify does not guarantee uninterrupted availability, that verification will succeed for all valid documents, or that credentials will be compatible with all future versions of the HIP protocol.</p>';
+    h += '<p>HIP Verify is not a financial service, identity provider, or certificate authority. A Tier 1 credential is a cryptographic attestation of human verification status within the HIP protocol — nothing more.</p>';
+
+    h += '<h3>10. Limitation of Liability</h3>';
+    h += '<p>To the maximum extent permitted by law, HIP Verify\'s total liability for any claim arising from use of the Service is limited to the amount you paid for the verification ($1.00 USD). HIP Verify is not liable for any indirect, incidental, consequential, or punitive damages.</p>';
+
+    h += '<h3>11. Changes to These Terms</h3>';
+    h += '<p>We may update these terms from time to time. Material changes will be noted with an updated effective date at the top of this page. Continued use of the Service after changes constitutes acceptance of the updated terms.</p>';
+
+    h += '<h3>12. Contact</h3>';
+    h += '<p>For questions about these terms, contact us through the <a href="https://github.com/human-integrity-protocol/hip-protocol/issues" target="_blank" rel="noopener">HIP Protocol GitHub repository</a>.</p>';
+
+    h += '<div style="margin-top:28px"><button class="hv-btn hv-btn-outline" onclick="goHome()">← Back to HIP Verify</button></div>';
+    h += '</div>';
+
+  } else if (state.phase === "privacy") {
+    h += '<div class="hv-legal">';
+    h += '<div class="hv-badge">Legal</div>';
+    h += '<h2>Privacy Policy</h2>';
+    h += '<div class="hv-legal-meta">Effective date: March 22, 2026 · Last updated: March 22, 2026</div>';
+
+    h += '<h3>1. Overview</h3>';
+    h += '<p>HIP Verify is designed around a principle of minimal data collection. We verify that you are a living human with a valid government ID, then we forget who you are. This document explains exactly what data is collected, by whom, and what happens to it.</p>';
+
+    h += '<h3>2. Data We Collect</h3>';
+
+    h += '<p><strong>Data we process but do NOT store:</strong></p>';
+    h += '<ul>';
+    h += '<li><strong>Identity documents:</strong> Your government ID images are sent directly to our verification provider (Didit) for processing. HIP Verify never receives, stores, or has access to your document images.</li>';
+    h += '<li><strong>Biometric data:</strong> Your selfie and liveness check data are processed by Didit. HIP Verify never receives, stores, or has access to your biometric data.</li>';
+    h += '<li><strong>Personal information:</strong> Your name, date of birth, document number, and other identity fields extracted from your ID are processed by Didit during verification. HIP Verify receives a verification result (approved/declined) but does not receive or store your personal information in readable form.</li>';
+    h += '</ul>';
+
+    h += '<p><strong>Data we DO store:</strong></p>';
+    h += '<ul>';
+    h += '<li><strong>Deduplication hash:</strong> A one-way HMAC-SHA-256 hash computed from your document number, date of birth, and issuing state. This hash is stored permanently in Cloudflare KV to prevent the same person from creating multiple credentials. It is computationally infeasible to reverse this hash to recover your identity.</li>';
+    h += '<li><strong>Verification session metadata:</strong> A temporary record of your verification session (session ID, status, timestamp, non-identifying verification scores). This is stored in Cloudflare KV with a 1-hour expiration and is automatically deleted.</li>';
+    h += '<li><strong>Credential ID mapping:</strong> Your deduplication hash is mapped to your credential ID (a pseudonymous identifier). This mapping is stored permanently to enable duplicate detection.</li>';
+    h += '</ul>';
+
+    h += '<p><strong>Data stored only in YOUR browser:</strong></p>';
+    h += '<ul>';
+    h += '<li><strong>Your credential:</strong> Your cryptographic key pair, credential ID, and issuance metadata are stored in your browser\'s localStorage. This data never leaves your device unless you explicitly export or transfer it. HIP Verify cannot access your browser localStorage.</li>';
+    h += '</ul>';
+
+    h += '<h3>3. Payment Data</h3>';
+    h += '<p>Payment is processed entirely by Stripe. HIP Verify does not receive, process, or store your credit card number, billing address, or other payment details. Stripe\'s privacy policy governs their handling of your payment data.</p>';
+
+    h += '<h3>4. Third-Party Data Processing</h3>';
+    h += '<p><strong>Didit</strong> (identity verification provider) processes your identity documents and biometric data under their own privacy policy. HIP Verify has a data processing relationship with Didit in which:</p>';
+    h += '<ul>';
+    h += '<li>Didit receives your ID images and selfie for verification</li>';
+    h += '<li>Didit sends verification results (approved/declined, document type, verification scores) to HIP Verify via a secure webhook</li>';
+    h += '<li>Didit\'s data retention policies govern how long they retain your identity data</li>';
+    h += '</ul>';
+    h += '<p><strong>Stripe</strong> (payment processor) handles all payment data under their own privacy policy.</p>';
+    h += '<p><strong>Cloudflare</strong> (infrastructure) hosts the verification worker and KV storage. Session data and deduplication hashes are stored in Cloudflare KV. Cloudflare\'s privacy policy applies to their infrastructure services.</p>';
+
+    h += '<h3>5. Data Retention</h3>';
+    h += '<ul>';
+    h += '<li><strong>Deduplication hashes:</strong> Stored permanently (required to enforce one-credential-per-human).</li>';
+    h += '<li><strong>Session data:</strong> Automatically deleted after 1 hour.</li>';
+    h += '<li><strong>Audit records (institutional verifications):</strong> Retained for 1 year, containing only operator ID, credential ID, and timestamp — no personal information.</li>';
+    h += '<li><strong>QR transfer relay data:</strong> Encrypted blobs are deleted after first retrieval or automatically after 5 minutes, whichever comes first.</li>';
+    h += '</ul>';
+
+    h += '<h3>6. What We Do NOT Do</h3>';
+    h += '<ul>';
+    h += '<li>We do not sell, share, or rent your personal data to any third party</li>';
+    h += '<li>We do not use your data for advertising or marketing</li>';
+    h += '<li>We do not track you across websites</li>';
+    h += '<li>We do not use cookies (the Service uses only localStorage for credential storage)</li>';
+    h += '<li>We do not collect IP addresses, device fingerprints, or analytics data</li>';
+    h += '<li>We do not store your name, date of birth, document number, or any personally identifiable information in readable form</li>';
+    h += '</ul>';
+
+    h += '<h3>7. Data Security</h3>';
+    h += '<p>All data in transit is encrypted via HTTPS/TLS. Deduplication hashes are computed using HMAC-SHA-256 with a server-side secret key. The QR credential transfer system uses AES-256-GCM end-to-end encryption where the encryption key never touches the server. Your credential\'s private key is generated and stored entirely in your browser and is never transmitted to any server.</p>';
+
+    h += '<h3>8. Your Rights</h3>';
+    h += '<p>Because HIP Verify stores only irreversible hashes rather than personal information, most traditional data subject rights (access, correction, portability) do not apply in a meaningful way — there is no personal data to access, correct, or port. However:</p>';
+    h += '<ul>';
+    h += '<li><strong>Deletion:</strong> You can request deletion of your deduplication hash. Be aware that this would allow re-verification with the same ID, which may conflict with the one-credential-per-human principle. Contact us through GitHub to make this request.</li>';
+    h += '<li><strong>Information:</strong> You can contact us to confirm whether a deduplication hash exists for your identity.</li>';
+    h += '</ul>';
+
+    h += '<h3>9. Young Users</h3>';
+    h += '<p>The Service is available to users aged 13 and older who possess a valid government-issued ID. We do not knowingly process data from children under 13. The HIP protocol itself has no age restriction — minors can also obtain credentials through Peer Vouch (Tier 2) or Device Biometric (Tier 3) on hipprotocol.org at no cost and with no age requirement.</p>';
+
+    h += '<h3>10. International Users</h3>';
+    h += '<p>The Service is operated from the United States. Data is processed through Cloudflare\'s global network, Didit\'s verification infrastructure, and Stripe\'s payment infrastructure. By using the Service, you consent to the processing of your data in these systems.</p>';
+
+    h += '<h3>11. Changes to This Policy</h3>';
+    h += '<p>We may update this policy from time to time. Material changes will be noted with an updated date at the top of this page.</p>';
+
+    h += '<h3>12. Contact</h3>';
+    h += '<p>For privacy-related questions or data deletion requests, contact us through the <a href="https://github.com/human-integrity-protocol/hip-protocol/issues" target="_blank" rel="noopener">HIP Protocol GitHub repository</a>.</p>';
+
+    h += '<div style="margin-top:28px"><button class="hv-btn hv-btn-outline" onclick="goHome()">← Back to HIP Verify</button></div>';
+    h += '</div>';
   }
 
   app.innerHTML = h;
@@ -599,6 +846,15 @@ async function pollStatus() {
 
     if (data.status === "Approved") {
       if (data.dedup === "exists") {
+        // S33: In recovery mode, "exists" is expected — proceed to recovery
+        if (state.recoveryMode) {
+          state.existingCredentialId = data.existingCredentialId || null;
+          state.verificationProof = data.verificationProof || null;
+          state.phase = "creating";
+          render();
+          await recoverCredential(data);
+          return;
+        }
         state.phase = "duplicate";
         state.existingCredentialId = data.existingCredentialId || null;
         render();
@@ -689,6 +945,15 @@ async function createCredential(sessionData) {
       }
     }
 
+    // S29: Initialize trust record for Tier 1 credential
+    try {
+      await fetch(WORKER_URL + "/trust/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential_id: cid, tier: 1 }),
+      });
+    } catch (_) {}
+
     state.credential = newCred;
     state.phase = "done";
     render();
@@ -697,6 +962,78 @@ async function createCredential(sessionData) {
     state.phase = "error";
     state.error = "Failed to create credential: " + ex.message + ". " +
       (ex.name === "NotSupportedError" ? "Your browser doesn't support Ed25519 cryptography. Try Chrome, Firefox, Safari 17+, or Edge. If using DuckDuckGo browser, disable shield protections for this site." : "Your verification was successful — try refreshing the page.");
+    render();
+  }
+}
+
+// S33: Credential recovery — generate new keys and rotate via /recover-credential
+async function recoverCredential(sessionData) {
+  try {
+    var kp = await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"]);
+    var pubRaw = await crypto.subtle.exportKey("raw", kp.publicKey);
+    var pub = hex(pubRaw);
+    var cid = await sha256(unhex(pub));
+    var privBytes = await crypto.subtle.exportKey("pkcs8", kp.privateKey);
+
+    var oldCredId = state.existingCredentialId;
+    if (!oldCredId) {
+      throw new Error("No existing credential ID found for recovery");
+    }
+
+    // Call worker to rotate dedup mapping and migrate trust
+    var recoverResp = await fetch(WORKER_URL + "/recover-credential", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recovery_type: "tier1-reverify",
+        session_id: state.sessionId,
+        old_credential_id: oldCredId,
+        new_credential_id: cid,
+      }),
+    });
+
+    if (!recoverResp.ok) {
+      var errData = await recoverResp.json().catch(function() { return {}; });
+      throw new Error(errData.error || "Recovery failed (HTTP " + recoverResp.status + ")");
+    }
+
+    var recoverData = await recoverResp.json();
+
+    var newCred = {
+      version: "hip-credential-v1",
+      credentialId: cid,
+      publicKey: pub,
+      privateKey: b64e(privBytes),
+      tier: 1,
+      pathway: "government-id-didit-v1",
+      issuedBy: "hipverify.org",
+      issuanceProof: sessionData.verificationProof || {
+        type: "didit-idv-v3",
+        sessionId: state.sessionId,
+        verifiedAt: new Date().toISOString(),
+      },
+      recoveredFrom: oldCredId,
+      recoveredAt: new Date().toISOString(),
+      trustMigrated: recoverData.trust_migrated || false,
+      created: new Date().toISOString(),
+      warning: "This file contains your private key. Anyone with this file can sign attestations as you. Store it securely.",
+    };
+
+    saveCredToStorage(newCred);
+
+    // Clean up recovery mode flag
+    try { localStorage.removeItem("hip_recovery_mode"); } catch(e) {}
+
+    state.credential = newCred;
+    state.recoveryTrustScore = recoverData.trust_score || null;
+    state.phase = "recovery-done";
+    render();
+
+  } catch (ex) {
+    state.phase = "error";
+    state.error = "Credential recovery failed: " + ex.message + ". Your identity verification was successful. Try refreshing the page to attempt recovery again.";
+    // Clean up recovery mode flag on error too
+    try { localStorage.removeItem("hip_recovery_mode"); } catch(e) {}
     render();
   }
 }
@@ -724,8 +1061,45 @@ function resetFlow() {
   state.pollCount = 0;
   state.transferCode = null;
   state.transferKey = null;
+  state.recoveryMode = false;
+  try { localStorage.removeItem("hip_recovery_mode"); } catch(e) {}
+  window.history.replaceState({}, document.title, window.location.pathname);
   render();
 }
+
+// S33: Start recovery from the duplicate screen
+function startRecovery() {
+  state.recoveryMode = true;
+  state.phase = "start";
+  state.error = null;
+  state.pollCount = 0;
+  try { localStorage.setItem("hip_recovery_mode", "true"); } catch(e) {}
+  render();
+}
+
+function goHome() {
+  window.history.replaceState({}, document.title, window.location.pathname);
+  // Reset to appropriate phase
+  var ec = loadCredFromStorage();
+  if (ec && ec.version === "hip-credential-v1") {
+    existingCred = ec;
+    state.phase = "existing";
+  } else {
+    state.phase = "start";
+  }
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// Listen for hash changes (back button, footer link clicks)
+window.addEventListener("hashchange", function() {
+  var h = window.location.hash;
+  if (h === "#terms" || h === "#privacy") {
+    state.phase = h.substring(1);
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+});
 
 // S27: QR Transfer — encrypt credential and push to relay
 async function doTransfer() {
