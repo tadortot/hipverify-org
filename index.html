@@ -292,7 +292,7 @@ function buildTransferUrl(cred) {
 
 // ── State ──
 var state = {
-  phase: "start",  // start | payment | verifying | polling | creating | done | error | duplicate | existing | recovery-done
+  phase: "start",  // start | payment | verifying | polling | creating | done | error | duplicate | existing | recovery-done | upgrade-done
   sessionId: null,
   error: null,
   credential: null,
@@ -303,20 +303,32 @@ var state = {
   transferCode: null,
   transferKey: null,
   recoveryMode: false, // S33: credential recovery via re-verification
+  upgradeMode: false, // S34: credential tier upgrade
+  upgradeCredentialId: null, // S34: credential ID being upgraded
 };
 
 // S33: Check for recovery mode (?mode=recovery)
+// S34: Check for upgrade mode (?mode=upgrade&cred=<id>)
 var urlParamsInit = new URLSearchParams(window.location.search);
 var modeParam = urlParamsInit.get("mode");
 if (modeParam === "recovery") {
   state.recoveryMode = true;
   // Persist recovery mode across redirects (Stripe → Didit → back)
   try { localStorage.setItem("hip_recovery_mode", "true"); } catch(e) {}
+} else if (modeParam === "upgrade") {
+  state.upgradeMode = true;
+  state.upgradeCredentialId = urlParamsInit.get("cred") || null;
+  try { localStorage.setItem("hip_upgrade_mode", "true"); } catch(e) {}
+  try { if (state.upgradeCredentialId) localStorage.setItem("hip_upgrade_cred_id", state.upgradeCredentialId); } catch(e) {}
 } else {
-  // Check if we're returning from a redirect during recovery
+  // Check if we're returning from a redirect during recovery or upgrade
   try {
     if (localStorage.getItem("hip_recovery_mode") === "true") {
       state.recoveryMode = true;
+    }
+    if (localStorage.getItem("hip_upgrade_mode") === "true") {
+      state.upgradeMode = true;
+      state.upgradeCredentialId = localStorage.getItem("hip_upgrade_cred_id") || null;
     }
   } catch(e) {}
 }
@@ -335,9 +347,9 @@ if (xferHash && xferHash.indexOf("#transfer=") === 0) {
   window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
 }
 
-// Check for existing credential (skip in recovery mode — user is intentionally re-verifying)
+// Check for existing credential (skip in recovery/upgrade mode — user is intentionally re-verifying)
 var existingCred = loadCredFromStorage();
-if (existingCred && existingCred.version === "hip-credential-v1" && state.phase !== "transfer" && !state.recoveryMode) {
+if (existingCred && existingCred.version === "hip-credential-v1" && state.phase !== "transfer" && !state.recoveryMode && !state.upgradeMode) {
   state.phase = "existing";
 }
 
@@ -351,7 +363,7 @@ if (legalHash === "#terms" || legalHash === "#privacy") {
 var urlParams = new URLSearchParams(window.location.search);
 var returnSessionId = urlParams.get("session_id") || urlParams.get("verificationSessionId");
 var returnStatus = urlParams.get("status");
-if (returnSessionId && (state.phase !== "existing" || state.recoveryMode)) {
+if (returnSessionId && (state.phase !== "existing" || state.recoveryMode || state.upgradeMode)) {
   // Didit may return a different ID than the worker session_id.
   // Use the persisted worker session_id for polling (that's what the webhook stores under).
   var pendingSession = null;
@@ -366,7 +378,7 @@ if (returnSessionId && (state.phase !== "existing" || state.recoveryMode)) {
 
 // S25: Check for Stripe payment return
 var paymentSuccess = urlParams.get("payment");
-if (paymentSuccess === "success" && (state.phase !== "existing" || state.recoveryMode) && state.phase !== "polling") {
+if (paymentSuccess === "success" && (state.phase !== "existing" || state.recoveryMode || state.upgradeMode) && state.phase !== "polling") {
   state.phase = "verifying";
   window.history.replaceState({}, document.title, window.location.pathname);
 }
@@ -410,7 +422,7 @@ function render() {
     if (ec.created) h += '<div class="hv-result-row"><span class="hv-result-label">Created</span><span class="hv-result-val">' + new Date(ec.created).toLocaleString() + '</span></div>';
     h += '</div>';
     if (ec.tier !== 1) {
-      h += '<div class="hv-alert hv-alert-blue"><strong>Want to upgrade to Tier 1?</strong> Retire your existing credential first on <a href="https://hipprotocol.org" style="color:#2563eb">hipprotocol.org</a> (Credential tab → Retire), then return here.</div>';
+      h += '<div class="hv-alert hv-alert-green"><strong>Want to upgrade to Tier 1?</strong> You can upgrade your existing credential without losing your trust history. <a href="?mode=upgrade&cred=' + encodeURIComponent(ec.credentialId) + '" style="color:#16a34a;font-weight:600">Start Tier 1 Upgrade →</a></div>';
     }
     var existTransferUrl = buildTransferUrl(ec);
     h += '<a href="' + existTransferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Transfer to hipprotocol.org →</a>';
@@ -430,6 +442,26 @@ function render() {
       h += '</div>';
 
       h += '<div class="hv-alert hv-alert-blue"><strong>How recovery works:</strong> Your identity is matched to your previous credential using the same one-way deduplication hash. A new cryptographic key pair is generated, and your trust record (attestation count, credential age, trust score) is migrated to the new credential. Proof Cards signed with your old credential remain valid.</div>';
+
+    } else if (state.upgradeMode) {
+      // S34: Upgrade mode — user is upgrading an existing T2/T3 credential to T1
+      h += '<div class="hv-badge" style="border-color:rgba(74,222,128,0.3);color:#16a34a">⬆ Tier Upgrade</div>';
+      h += '<h1 class="hv-hero-title">Upgrade to Tier 1</h1>';
+      h += '<p class="hv-hero-sub">Upgrade your existing credential to Tier 1 by verifying your government ID. Your credential ID, keys, and trust history are all preserved — only the tier changes.</p>';
+
+      if (state.upgradeCredentialId) {
+        h += '<div class="hv-result" style="margin-bottom:16px">';
+        h += '<div class="hv-result-row"><span class="hv-result-label">Credential being upgraded</span><span class="hv-result-val" style="font-size:11px;word-break:break-all">' + state.upgradeCredentialId + '</span></div>';
+        h += '</div>';
+      }
+
+      h += '<div class="hv-card">';
+      h += '<div class="hv-step"><div class="hv-step-dot hv-dot-active">1</div><div><div class="hv-step-title">Pay verification fee</div><div class="hv-step-text">A one-time fee of <strong style="color:#1a1a1a">$1.00</strong> covers identity verification processing.</div></div></div>';
+      h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">2</div><div><div class="hv-step-title">Verify your identity</div><div class="hv-step-text">Scan your government ID and take a selfie. This links your identity to your existing credential.</div></div></div>';
+      h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">3</div><div><div class="hv-step-title">Tier upgraded</div><div class="hv-step-text">Your credential is upgraded in-place. No new keys — your existing credential ID and all attestations are preserved.</div></div></div>';
+      h += '</div>';
+
+      h += '<div class="hv-alert hv-alert-blue"><strong>How upgrade works:</strong> Your identity is verified through government ID, and a deduplication hash is created. Your existing trust record (attestation count, credential age, trust score) is updated to reflect the new tier — the tier_base component of your trust score increases immediately. No new keys are generated.</div>';
 
     } else {
       h += '<div class="hv-badge">✓ Independent Pathway Operator</div>';
@@ -452,9 +484,9 @@ function render() {
       h += 'Otherwise, please open this page in Chrome, Firefox, Safari 17+, or Edge.</div>';
     }
 
-    h += '<button class="hv-btn hv-btn-gold" onclick="startPayment()">' + (state.recoveryMode ? 'Pay $1.00 & Re-Verify Identity →' : 'Pay $1.00 & Begin Verification →') + '</button>';
+    h += '<button class="hv-btn hv-btn-gold" onclick="startPayment()">' + (state.recoveryMode ? 'Pay $1.00 & Re-Verify Identity →' : state.upgradeMode ? 'Pay $1.00 & Verify Identity to Upgrade →' : 'Pay $1.00 & Begin Verification →') + '</button>';
 
-    if (!state.recoveryMode) {
+    if (!state.recoveryMode && !state.upgradeMode) {
     // ── Other Verification Paths ──
     h += '<div class="hv-divider"></div>';
     h += '<div class="hv-section-label" id="institutional">Other Verification Paths</div>';
@@ -462,9 +494,8 @@ function render() {
 
     h += '<a href="https://hipprotocol.org#tier3" target="_blank" rel="noopener" class="hv-lane" style="display:block;text-decoration:none;color:inherit">';
     h += '<div class="hv-lane-header"><div class="hv-lane-dot" style="background:#16a34a"></div><div class="hv-lane-title">Tier 3 — Device Biometric <span style="font-size:11px;font-weight:400;color:#16a34a">↗ hipprotocol.org</span></div></div>';
-    h += '<div class="hv-lane-text">Try HIP at no cost. Use Face ID, Touch ID, or Windows Hello to create a credential instantly. Lower starting trust score, but full access to attestation and verification.</div>';
-    h += '<div class="hv-lane-text" style="margin-top:6px;font-size:12px;color:#999"><strong style="color:#777">Note:</strong> Tier upgrade with trust migration (keeping your attestation history when moving to Tier 1) is coming soon. For now, attestations made with a Tier 3 credential stay with that credential. If you plan to use HIP long-term, starting with Tier 1 avoids a future migration step.</div>';
-    h += '<div class="hv-lane-tag" style="background:rgba(22,163,74,0.06);color:#16a34a">No Cost · Instant</div>';
+    h += '<div class="hv-lane-text">Try HIP at no cost. Use Face ID, Touch ID, or Windows Hello to create a credential instantly. Lower starting trust score, but full access to attestation and verification. You can upgrade to Tier 1 anytime — your trust history is preserved.</div>';
+    h += '<div class="hv-lane-tag" style="background:rgba(22,163,74,0.06);color:#16a34a">No Cost · Instant · Upgradeable</div>';
     h += '</a>';
 
     h += '<a href="https://hipprotocol.org#tier2" target="_blank" rel="noopener" class="hv-lane" style="display:block;text-decoration:none;color:inherit">';
@@ -511,7 +542,7 @@ function render() {
     h += '<div style="font-size:13px;color:#555;line-height:1.7;margin-bottom:8px"><strong style="color:#1a1a1a">DP-5 — Permissionless Proliferation:</strong> "Any actor may build tools, integrate HIP, display Proofcards, host Bundles, or create verification interfaces without permission."</div>';
     h += '<div style="font-size:13px;color:#555;line-height:1.7"><strong style="color:#1a1a1a">DP-7 — Zero Institutional Cost:</strong> "If it costs money, it\'s not the protocol — it\'s an institution choosing to invest in its own implementation." HIP Verify is that institution.</div>';
     h += '</div>';
-    } // end if (!state.recoveryMode)
+    } // end if (!state.recoveryMode && !state.upgradeMode)
 
   } else if (state.phase === "payment") {
     h += '<div class="hv-badge">● Step 1 of 3</div>';
@@ -579,6 +610,25 @@ function render() {
     h += '<a href="' + transferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Transfer to hipprotocol.org →</a>';
     h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:12px" onclick="downloadBackup()">↓ Download Backup Copy</button>';
     h += '<div class="hv-alert hv-alert-amber"><strong>Save your backup this time!</strong> Download a backup copy of your new credential file and store it somewhere safe. If you lose access again, you can recover — but it costs another verification fee.</div>';
+
+  } else if (state.phase === "upgrade-done") {
+    // S34: Successful tier upgrade
+    var upgCredId = state.upgradeCredentialId || "unknown";
+    var upgReturnUrl = "https://hipprotocol.org#hip-upgrade=" + encodeURIComponent(upgCredId) + "&tier=1&session=" + encodeURIComponent(state.sessionId || "");
+    h += '<div class="hv-badge" style="border-color:rgba(22,163,74,0.3);color:#16a34a">✓ Credential Upgraded</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Upgraded to Tier 1</h1>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your identity has been verified and your existing credential has been upgraded to Tier 1. No new keys were generated — your credential ID and all existing attestations are preserved.</p>';
+    h += '<div class="hv-alert hv-alert-green">✓ <strong>Upgrade complete.</strong> Your trust record has been updated. The tier_base component of your trust score now reflects Tier 1 (40 points). Your attestation count, credential age, and behavioral history are all preserved.</div>';
+    h += '<div class="hv-result">';
+    h += '<div class="hv-result-row"><span class="hv-result-label">Credential ID</span><span class="hv-result-val" style="font-size:11px;word-break:break-all">' + upgCredId + '</span></div>';
+    h += '<div class="hv-result-row"><span class="hv-result-label">New Tier</span><span class="hv-result-val">Tier 1 — Government ID</span></div>';
+    if (state.upgradeTrustScore !== null && state.upgradeTrustScore !== undefined) {
+      h += '<div class="hv-result-row"><span class="hv-result-label">Trust Score</span><span class="hv-result-val">' + state.upgradeTrustScore + ' / 100 (updated)</span></div>';
+    }
+    h += '<div class="hv-result-row"><span class="hv-result-label">Upgraded</span><span class="hv-result-val">' + new Date().toLocaleString() + '</span></div>';
+    h += '</div>';
+    h += '<a href="' + upgReturnUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Return to hipprotocol.org →</a>';
+    h += '<div class="hv-alert hv-alert-blue"><strong>Next step:</strong> Return to hipprotocol.org to update your local credential. The link above will automatically apply the tier upgrade to the credential saved in your browser. Download a fresh backup copy afterward.</div>';
 
   } else if (state.phase === "duplicate") {
     h += '<div class="hv-badge" style="border-color:rgba(217,119,6,0.3);color:#d97706">● Duplicate Detected</div>';
@@ -855,9 +905,26 @@ async function pollStatus() {
           await recoverCredential(data);
           return;
         }
+        // S34: In upgrade mode, "exists" means they already have IDV — upgrade directly
+        if (state.upgradeMode) {
+          state.verificationProof = data.verificationProof || null;
+          state.phase = "creating";
+          render();
+          await upgradeCredential(data);
+          return;
+        }
         state.phase = "duplicate";
         state.existingCredentialId = data.existingCredentialId || null;
         render();
+        return;
+      }
+
+      // S34: In upgrade mode with dedup="new", proceed to upgrade
+      if (state.upgradeMode) {
+        state.verificationProof = data.verificationProof || null;
+        state.phase = "creating";
+        render();
+        await upgradeCredential(data);
         return;
       }
 
@@ -1038,6 +1105,50 @@ async function recoverCredential(sessionData) {
   }
 }
 
+// S34: Credential upgrade — no new keys, just update tier via /upgrade-credential
+async function upgradeCredential(sessionData) {
+  try {
+    var credId = state.upgradeCredentialId;
+    if (!credId) {
+      throw new Error("No credential ID found for upgrade. Return to hipprotocol.org and try again.");
+    }
+
+    // Call worker to upgrade the trust record
+    var upgradeResp = await fetch(WORKER_URL + "/upgrade-credential", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        upgrade_type: "tier1-idv",
+        credential_id: credId,
+        new_tier: 1,
+        session_id: state.sessionId,
+      }),
+    });
+
+    if (!upgradeResp.ok) {
+      var errData = await upgradeResp.json().catch(function() { return {}; });
+      throw new Error(errData.error || "Upgrade failed (HTTP " + upgradeResp.status + ")");
+    }
+
+    var upgradeData = await upgradeResp.json();
+
+    // Clean up upgrade mode flags
+    try { localStorage.removeItem("hip_upgrade_mode"); } catch(e) {}
+    try { localStorage.removeItem("hip_upgrade_cred_id"); } catch(e) {}
+
+    state.upgradeTrustScore = upgradeData.trust_score || null;
+    state.phase = "upgrade-done";
+    render();
+
+  } catch (ex) {
+    state.phase = "error";
+    state.error = "Tier upgrade failed: " + ex.message + ". Your identity verification was successful. Return to hipprotocol.org and try again.";
+    try { localStorage.removeItem("hip_upgrade_mode"); } catch(e) {}
+    try { localStorage.removeItem("hip_upgrade_cred_id"); } catch(e) {}
+    render();
+  }
+}
+
 function downloadBackup() {
   var cred = state.credential || existingCred;
   if (!cred) return;
@@ -1062,7 +1173,11 @@ function resetFlow() {
   state.transferCode = null;
   state.transferKey = null;
   state.recoveryMode = false;
+  state.upgradeMode = false;
+  state.upgradeCredentialId = null;
   try { localStorage.removeItem("hip_recovery_mode"); } catch(e) {}
+  try { localStorage.removeItem("hip_upgrade_mode"); } catch(e) {}
+  try { localStorage.removeItem("hip_upgrade_cred_id"); } catch(e) {}
   window.history.replaceState({}, document.title, window.location.pathname);
   render();
 }
