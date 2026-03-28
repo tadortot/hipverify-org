@@ -322,15 +322,24 @@ if (modeParam === "recovery") {
   try { if (state.upgradeCredentialId) localStorage.setItem("hip_upgrade_cred_id", state.upgradeCredentialId); } catch(e) {}
 } else {
   // Check if we're returning from a redirect during recovery or upgrade
-  try {
-    if (localStorage.getItem("hip_recovery_mode") === "true") {
-      state.recoveryMode = true;
-    }
-    if (localStorage.getItem("hip_upgrade_mode") === "true") {
-      state.upgradeMode = true;
-      state.upgradeCredentialId = localStorage.getItem("hip_upgrade_cred_id") || null;
-    }
-  } catch(e) {}
+  // Only restore flags if there's evidence of an active redirect flow (session_id or payment param)
+  var hasCallbackParams = (new URLSearchParams(window.location.search)).get("session_id") || (new URLSearchParams(window.location.search)).get("verificationSessionId") || (new URLSearchParams(window.location.search)).get("payment");
+  if (hasCallbackParams) {
+    try {
+      if (localStorage.getItem("hip_recovery_mode") === "true") {
+        state.recoveryMode = true;
+      }
+      if (localStorage.getItem("hip_upgrade_mode") === "true") {
+        state.upgradeMode = true;
+        state.upgradeCredentialId = localStorage.getItem("hip_upgrade_cred_id") || null;
+      }
+    } catch(e) {}
+  } else {
+    // Clean URL with no active flow — clear stale flags
+    try { localStorage.removeItem("hip_recovery_mode"); } catch(e) {}
+    try { localStorage.removeItem("hip_upgrade_mode"); } catch(e) {}
+    try { localStorage.removeItem("hip_upgrade_cred_id"); } catch(e) {}
+  }
 }
 
 // S27: Check for QR transfer request (hash fragment: #transfer=CODE&key=KEY)
