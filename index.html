@@ -201,24 +201,56 @@ code{font-family:'Azeret Mono','SF Mono',monospace;font-size:12px;color:#666}
 .hv-legal a{color:#2563eb}
 
 /* ── Responsive ── */
-@media(max-width:480px){
+.hv-hamburger{
+  display:none;background:none;border:none;cursor:pointer;padding:4px;
+  color:#1a1a1a;font-size:22px;line-height:1;
+}
+.hv-mobile-menu{
+  display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:200;
+  background:rgba(248,247,245,0.98);backdrop-filter:blur(12px);
+  flex-direction:column;align-items:center;justify-content:center;gap:24px;
+}
+.hv-mobile-menu.hv-mobile-open{display:flex}
+.hv-mobile-menu a{
+  font-family:'Azeret Mono',monospace;font-size:14px;letter-spacing:1px;color:#1a1a1a;
+  text-decoration:none;padding:8px 0;
+}
+.hv-mobile-menu a:hover{color:#2563eb}
+.hv-mobile-close{
+  position:absolute;top:18px;right:24px;background:none;border:none;
+  cursor:pointer;font-size:28px;color:#1a1a1a;line-height:1;
+}
+@media(max-width:768px){
   .hv-nav-links{display:none}
-  .hv-main{padding:32px 18px 60px}
+  .hv-hamburger{display:block}
+  .hv-main{padding:36px 20px 60px}
+}
+@media(max-width:480px){
+  .hv-main{padding:28px 16px 48px}
+  .hv-nav{padding:14px 18px}
 }
 </style>
 </head>
 <body>
 
 <nav class="hv-nav">
-  <div class="hv-nav-brand">
+  <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" class="hv-nav-brand" style="text-decoration:none;color:#1a1a1a">
     <span>✓</span> HIP Verify
-  </div>
+  </a>
   <div class="hv-nav-links">
     <a href="#how">How It Works</a>
     <a href="#institutional">Institutional</a>
     <a href="https://hipprotocol.org" target="_blank" rel="noopener">hipprotocol.org ↗</a>
   </div>
+  <button class="hv-hamburger" onclick="document.getElementById('hv-mobile').classList.add('hv-mobile-open')" aria-label="Menu">☰</button>
 </nav>
+
+<div id="hv-mobile" class="hv-mobile-menu">
+  <button class="hv-mobile-close" onclick="document.getElementById('hv-mobile').classList.remove('hv-mobile-open')" aria-label="Close">✕</button>
+  <a href="#how" onclick="document.getElementById('hv-mobile').classList.remove('hv-mobile-open')">How It Works</a>
+  <a href="#institutional" onclick="document.getElementById('hv-mobile').classList.remove('hv-mobile-open')">Institutional</a>
+  <a href="https://hipprotocol.org" target="_blank" rel="noopener">hipprotocol.org ↗</a>
+</div>
 
 <div class="hv-main" id="app">
   <noscript>
