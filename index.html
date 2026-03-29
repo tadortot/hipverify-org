@@ -238,6 +238,7 @@ code{font-family:'Azeret Mono','SF Mono',monospace;font-size:12px;color:#666}
     <span>✓</span> HIP Verify
   </a>
   <div class="hv-nav-links">
+    <a href="#verify">Verify</a>
     <a href="#how">How It Works</a>
     <a href="#institutional">Institutional</a>
     <a href="https://hipprotocol.org" target="_blank" rel="noopener">hipprotocol.org ↗</a>
@@ -247,6 +248,7 @@ code{font-family:'Azeret Mono','SF Mono',monospace;font-size:12px;color:#666}
 
 <div id="hv-mobile" class="hv-mobile-menu">
   <button class="hv-mobile-close" onclick="document.getElementById('hv-mobile').classList.remove('hv-mobile-open')" aria-label="Close">✕</button>
+  <a href="#verify" onclick="document.getElementById('hv-mobile').classList.remove('hv-mobile-open')">Verify</a>
   <a href="#how" onclick="document.getElementById('hv-mobile').classList.remove('hv-mobile-open')">How It Works</a>
   <a href="#institutional" onclick="document.getElementById('hv-mobile').classList.remove('hv-mobile-open')">Institutional</a>
   <a href="https://hipprotocol.org" target="_blank" rel="noopener">hipprotocol.org ↗</a>
@@ -446,6 +448,44 @@ var HIP_CRYPTO_ERR = "";
   }
 })();
 
+// S41: Quick Verify — SHA-256 file locally, check proof registry
+async function hvQuickVerify(file) {
+  if (!file) return;
+  var resultEl = document.getElementById("hv-verify-result");
+  if (!resultEl) return;
+  resultEl.innerHTML = '<div style="padding:12px;text-align:center;color:#777;font-size:13px"><span class="hv-spinner"></span>Computing hash for ' + file.name.replace(/</g,"&lt;") + '…</div>';
+
+  try {
+    var ab = await file.arrayBuffer();
+    var hashBuf = await crypto.subtle.digest("SHA-256", ab);
+    var hash = Array.from(new Uint8Array(hashBuf)).map(function(b){return b.toString(16).padStart(2,"0")}).join("");
+
+    resultEl.innerHTML = '<div style="padding:12px;text-align:center;color:#777;font-size:13px"><span class="hv-spinner"></span>Checking registry…</div>';
+
+    var resp = await fetch(WORKER_URL + "/api/proof/" + hash);
+    var data = await resp.json();
+
+    if (data.found) {
+      var cls = {"CompleteHumanOrigin":"Complete Human Origin","HumanOriginAssisted":"Human Origin Assisted","HumanDirectedCollaborative":"Human-Directed Collaborative"}[data.classification] || data.classification || "Unknown";
+      var tier = data.credential_tier ? "Tier " + data.credential_tier : "";
+      var date = data.attested_at ? new Date(data.attested_at).toLocaleDateString("en-US",{year:"numeric",month:"short",day:"numeric"}) : "";
+      var proofLink = data.short_id ? "https://hipprotocol.org/p/" + data.short_id : "https://hipprotocol.org/proof.html?hash=" + hash;
+
+      if (data.sealed) {
+        resultEl.innerHTML = '<div class="hv-alert hv-alert-blue" style="margin:0"><strong>Sealed attestation found.</strong> This file has been attested but the proof details are private until the creator unseals it. <a href="' + proofLink + '" target="_blank" rel="noopener" style="color:#2563eb">View proof →</a></div>';
+      } else if (data.disputes && data.disputes.length > 0) {
+        resultEl.innerHTML = '<div class="hv-alert hv-alert-amber" style="margin:0"><strong>Attested — disputed.</strong> ' + cls + ' · ' + tier + ' · ' + date + '. This attestation has ' + data.disputes.length + ' dispute(s). <a href="' + proofLink + '" target="_blank" rel="noopener" style="color:#d97706">View proof →</a></div>';
+      } else {
+        resultEl.innerHTML = '<div class="hv-alert hv-alert-green" style="margin:0"><strong>✓ Attested.</strong> ' + cls + ' · ' + tier + ' · ' + date + '. <a href="' + proofLink + '" target="_blank" rel="noopener" style="color:#16a34a">View proof card →</a></div>';
+      }
+    } else {
+      resultEl.innerHTML = '<div class="hv-alert hv-alert-amber" style="margin:0"><strong>Not found.</strong> No attestation record exists for this file. The creator may not have published a proof, or you may have a modified copy.</div>';
+    }
+  } catch (ex) {
+    resultEl.innerHTML = '<div class="hv-alert hv-alert-red" style="margin:0"><strong>Error:</strong> ' + (ex.message || "Could not check registry") + '</div>';
+  }
+}
+
 // ── Render ──
 function render() {
   var app = document.getElementById("app");
@@ -577,6 +617,23 @@ function render() {
     h += '</div>';
 
     // ── Charter compliance ──
+    h += '<div class="hv-divider"></div>';
+
+    // S41: Quick Verify drop zone — check any file against the proof registry
+    h += '<div class="hv-section-label" id="verify">Verify Content</div>';
+    h += '<div class="hv-card" style="padding:0;overflow:hidden">';
+    h += '<div id="hv-verify-zone" style="padding:28px 20px;text-align:center;cursor:pointer;border:2px dashed rgba(0,0,0,0.08);border-radius:10px;margin:12px;transition:border-color 0.15s,background 0.15s"';
+    h += ' ondragover="event.preventDefault();event.stopPropagation();this.style.borderColor=\'rgba(37,99,235,0.4)\';this.style.background=\'rgba(37,99,235,0.02)\'"';
+    h += ' ondragleave="event.preventDefault();event.stopPropagation();this.style.borderColor=\'rgba(0,0,0,0.08)\';this.style.background=\'transparent\'"';
+    h += ' ondrop="event.preventDefault();event.stopPropagation();this.style.borderColor=\'rgba(0,0,0,0.08)\';this.style.background=\'transparent\';hvQuickVerify(event.dataTransfer.files[0])"';
+    h += ' onclick="document.getElementById(\'hv-verify-input\').click()">';
+    h += '<input type="file" id="hv-verify-input" style="display:none" onchange="hvQuickVerify(this.files[0])">';
+    h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:11px;letter-spacing:1px;color:#2563eb;margin-bottom:6px">CHECK PROOF REGISTRY</div>';
+    h += '<div style="font-size:14px;color:#555">Drop any file here to check if it has been attested</div>';
+    h += '</div>';
+    h += '<div id="hv-verify-result" style="padding:0 12px 12px"></div>';
+    h += '</div>';
+
     h += '<div class="hv-divider"></div>';
     h += '<div class="hv-section-label">Charter Compliance</div>';
     h += '<div class="hv-card">';
