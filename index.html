@@ -1584,9 +1584,33 @@ async function hvQuickVerify(file) {
         out += '<div class="hv-alert hv-alert-green" style="margin:0"><strong>✓ Attested.</strong> ' + cls + ' · ' + tier + ' · ' + date + '. <a href="' + proofLink + '" target="_blank" rel="noopener" style="color:#16a34a">View proof card →</a></div>';
       }
     } else {
-      // Not in registry — check if embedded HIP data points somewhere
+      // Not in registry — check if embedded HIP data points to a registered hash
       if (embeddedHip && embeddedHip.content_hash && embeddedHip.content_hash !== hash) {
-        out += '<div class="hv-alert hv-alert-amber" style="margin:0"><strong>Modified file.</strong> This file contains embedded HIP proof data, but its current hash doesn\'t match the attested hash. The file may have been modified after attestation, or this is the pre-attestation version.</div>';
+        // S44: Follow the embedded content_hash to the registry.
+        // This handles "Save Attested Copy" files — their file hash (C) differs from
+        // the registered hash (B) because proof metadata was added after registration.
+        // The embedded content_hash IS hash B (the registered one).
+        try {
+          var embResp = await fetch(WORKER_URL + "/api/proof/" + embeddedHip.content_hash);
+          var embData = await embResp.json();
+          if (embData.found) {
+            var cls2 = {"CompleteHumanOrigin":"Complete Human Origin","HumanOriginAssisted":"Human Origin Assisted","HumanDirectedCollaborative":"Human-Directed Collaborative"}[embData.classification] || embData.classification || "Unknown";
+            var tier2 = embData.credential_tier ? "Tier " + embData.credential_tier : "";
+            var date2 = embData.attested_at ? new Date(embData.attested_at).toLocaleDateString("en-US",{year:"numeric",month:"short",day:"numeric"}) : "";
+            var proofLink2 = embData.short_id ? "https://hipprotocol.org/p/" + embData.short_id : "https://hipprotocol.org/proof.html?hash=" + embeddedHip.content_hash;
+            if (embData.sealed) {
+              out += '<div class="hv-alert hv-alert-blue" style="margin:0"><strong>Sealed attestation found</strong> (via embedded proof metadata). This is an attested copy — its proof details are private until the creator unseals it. <a href="' + proofLink2 + '" target="_blank" rel="noopener" style="color:#2563eb">View proof →</a></div>';
+            } else if (embData.disputes && embData.disputes.length > 0) {
+              out += '<div class="hv-alert hv-alert-amber" style="margin:0"><strong>✓ Attested copy — disputed.</strong> ' + cls2 + ' · ' + tier2 + ' · ' + date2 + '. This is an attested copy with embedded proof metadata. The attestation has ' + embData.disputes.length + ' dispute(s). <a href="' + proofLink2 + '" target="_blank" rel="noopener" style="color:#d97706">View proof →</a></div>';
+            } else {
+              out += '<div class="hv-alert hv-alert-green" style="margin:0"><strong>✓ Attested copy verified.</strong> ' + cls2 + ' · ' + tier2 + ' · ' + date2 + '. This file contains embedded proof metadata linking it to a registered attestation. <a href="' + proofLink2 + '" target="_blank" rel="noopener" style="color:#16a34a">View proof card →</a></div>';
+            }
+          } else {
+            out += '<div class="hv-alert hv-alert-amber" style="margin:0"><strong>Embedded proof data found</strong> but the referenced attestation was not found in the registry. The content_hash in this file\'s metadata does not match any registered proof.</div>';
+          }
+        } catch(e2) {
+          out += '<div class="hv-alert hv-alert-amber" style="margin:0"><strong>Embedded proof data found</strong> but could not verify against the registry. The registry may be temporarily unavailable.</div>';
+        }
       } else if (embeddedHip) {
         out += '<div class="hv-alert hv-alert-amber" style="margin:0"><strong>Embedded proof data found</strong> but no matching registry record. The attestation may not have been published, or the registry may be temporarily unavailable.</div>';
       } else {
