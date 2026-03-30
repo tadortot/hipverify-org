@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600&family=Azeret+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/piexifjs@1.0.6/piexif.min.js"></script>
 <style>
 /* ── Reset & Base ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -448,22 +449,1126 @@ var HIP_CRYPTO_ERR = "";
   }
 })();
 
-// S41: Quick Verify — SHA-256 file locally, check proof registry
+// ── S42: HIP Metadata Extraction (from embedded image metadata) ──
+// Detects HIP proof data embedded in JPEG (XMP), PNG (iTXt), WebP (XMP)
+var HipMetaExtract = (function() {
+  function detectFmt(buf) {
+    var u = new Uint8Array(buf, 0, 16);
+    if (u[0]===0xFF && u[1]===0xD8 && u[2]===0xFF) return "jpeg";
+    if (u[0]===0x89 && u[1]===0x50 && u[2]===0x4E && u[3]===0x47) return "png";
+    if (u[0]===0x52 && u[1]===0x49 && u[2]===0x46 && u[3]===0x46 && u[8]===0x57 && u[9]===0x45 && u[10]===0x42 && u[11]===0x50) return "webp";
+    return null;
+  }
+  function strB(s) { return new TextEncoder().encode(s); }
+  function parseXMP(xmpStr) {
+    var ex = function(attr) { var re = new RegExp('hip:' + attr + '="([^"]*)"'); var m = xmpStr.match(re); return m ? m[1] : null; };
+    if (ex("Protocol") !== "HIP") return null;
+    return { protocol:"HIP", version:ex("ProtocolVersion"), content_hash:ex("ContentHash"),
+      credential_id:ex("CredentialID"), classification:ex("Classification"),
+      classification_label:ex("ClassificationLabel"), attested_at:ex("AttestedAt"),
+      signature:ex("Signature"), proof_url:ex("ProofURL") };
+  }
+  function extractJPEG(buf) {
+    var src = new Uint8Array(buf); var nsBytes = strB("http://ns.adobe.com/xap/1.0/\0");
+    var pos = 2;
+    while (pos < src.length - 1) {
+      if (src[pos] !== 0xFF) break; var marker = src[pos+1];
+      if (marker === 0xD9 || marker === 0xDA) break;
+      var mLen = (src[pos+2]<<8)|src[pos+3];
+      if (marker === 0xE1 && mLen > nsBytes.length + 2) {
+        var isXMP = true;
+        for (var i = 0; i < nsBytes.length; i++) { if (src[pos+4+i] !== nsBytes[i]) { isXMP = false; break; } }
+        if (isXMP) { var xmpStr = new TextDecoder().decode(src.subarray(pos+4+nsBytes.length, pos+2+mLen)); return parseXMP(xmpStr); }
+      }
+      pos += 2 + mLen;
+    }
+    return null;
+  }
+  function extractPNG(buf) {
+    var src = new Uint8Array(buf); var p = 8;
+    while (p < src.length) {
+      var chunkLen = (src[p]<<24)|(src[p+1]<<16)|(src[p+2]<<8)|src[p+3];
+      var ct = String.fromCharCode(src[p+4],src[p+5],src[p+6],src[p+7]);
+      if (ct === "iTXt") {
+        var kEnd = p + 8;
+        while (kEnd < p+8+chunkLen && src[kEnd] !== 0) kEnd++;
+        var kw = new TextDecoder().decode(src.subarray(p+8, kEnd));
+        if (kw === "HIP:Proof") {
+          var tStart = kEnd+1+1+1;
+          while (tStart < p+8+chunkLen && src[tStart] !== 0) tStart++; tStart++;
+          while (tStart < p+8+chunkLen && src[tStart] !== 0) tStart++; tStart++;
+          var textStr = new TextDecoder().decode(src.subarray(tStart, p+8+chunkLen));
+          try { return JSON.parse(textStr); } catch(e) { return null; }
+        }
+      }
+      if (ct === "IEND") break;
+      p += 12 + chunkLen;
+    }
+    return null;
+  }
+  function extractWebP(buf) {
+    var src = new Uint8Array(buf);
+    var riffSize = src[4]|(src[5]<<8)|(src[6]<<16)|(src[7]<<24);
+    var riffEnd = Math.min(8+riffSize, src.length); var p = 12;
+    while (p+8 <= riffEnd) {
+      var fourcc = String.fromCharCode(src[p],src[p+1],src[p+2],src[p+3]);
+      var size = src[p+4]|(src[p+5]<<8)|(src[p+6]<<16)|(src[p+7]<<24);
+      if (p+8+size > riffEnd) break;
+      if (fourcc === "XMP ") { var xmpStr = new TextDecoder().decode(src.subarray(p+8, p+8+size)); return parseXMP(xmpStr); }
+      p += 8 + size + (size & 1);
+    }
+    return null;
+  }
+  function extract(buf) {
+    var fmt = detectFmt(buf); if (!fmt) return null;
+    switch(fmt) { case "jpeg": return extractJPEG(buf); case "png": return extractPNG(buf); case "webp": return extractWebP(buf); default: return null; }
+  }
+  return { extract: extract, detectFormat: detectFmt };
+})();
+
+// ── S42: EXIF Camera Info Extraction ──
+// Reads camera-relevant EXIF tags from JPEG files using piexifjs.
+// Returns an object with camera details or null if not a JPEG / no EXIF.
+function extractCameraInfo(file, arrayBuffer) {
+  try {
+    if (typeof piexif === "undefined") return null;
+    // piexif.load needs a data URL for JPEG
+    var ext = file.name ? file.name.toLowerCase().split(".").pop() : "";
+    if (ext !== "jpg" && ext !== "jpeg") return null;
+
+    // Convert ArrayBuffer to base64 data URL
+    var bytes = new Uint8Array(arrayBuffer);
+    var binary = "";
+    // Process in chunks to avoid call stack overflow on large files
+    var chunkSize = 8192;
+    for (var i = 0; i < bytes.length; i += chunkSize) {
+      var chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+      binary += String.fromCharCode.apply(null, chunk);
+    }
+    var dataURL = "data:image/jpeg;base64," + btoa(binary);
+
+    var exifObj = piexif.load(dataURL);
+    if (!exifObj) return null;
+
+    var info = {};
+    var zeroth = exifObj["0th"] || {};
+    var exifIFD = exifObj["Exif"] || {};
+    var gps = exifObj["GPS"] || {};
+
+    // Camera make/model
+    if (zeroth[piexif.ImageIFD.Make]) info.make = zeroth[piexif.ImageIFD.Make].replace(/\0/g,"").trim();
+    if (zeroth[piexif.ImageIFD.Model]) info.model = zeroth[piexif.ImageIFD.Model].replace(/\0/g,"").trim();
+    if (zeroth[piexif.ImageIFD.Software]) info.software = zeroth[piexif.ImageIFD.Software].replace(/\0/g,"").trim();
+
+    // Lens
+    if (exifIFD[piexif.ExifIFD.LensModel]) info.lens = exifIFD[piexif.ExifIFD.LensModel].replace(/\0/g,"").trim();
+
+    // Exposure settings
+    if (exifIFD[piexif.ExifIFD.FocalLength]) {
+      var fl = exifIFD[piexif.ExifIFD.FocalLength];
+      info.focalLength = (fl[0] / fl[1]) + "mm";
+    }
+    if (exifIFD[piexif.ExifIFD.FNumber]) {
+      var fn = exifIFD[piexif.ExifIFD.FNumber];
+      info.aperture = "f/" + (fn[0] / fn[1]);
+    }
+    if (exifIFD[piexif.ExifIFD.ExposureTime]) {
+      var et = exifIFD[piexif.ExifIFD.ExposureTime];
+      if (et[0] < et[1]) info.shutter = et[0] + "/" + et[1] + "s";
+      else info.shutter = (et[0] / et[1]) + "s";
+    }
+    if (exifIFD[piexif.ExifIFD.ISOSpeedRatings]) info.iso = "ISO " + exifIFD[piexif.ExifIFD.ISOSpeedRatings];
+
+    // Scene/sensing info
+    if (exifIFD[piexif.ExifIFD.SceneType]) {
+      var st = exifIFD[piexif.ExifIFD.SceneType];
+      var stVal = typeof st === "string" ? st.charCodeAt(0) : (st instanceof Uint8Array ? st[0] : st);
+      if (stVal === 1) info.sceneType = "Directly photographed";
+    }
+    if (exifIFD[piexif.ExifIFD.SensingMethod]) {
+      var sm = exifIFD[piexif.ExifIFD.SensingMethod];
+      var smLabels = {1:"Undefined",2:"One-chip color area",3:"Two-chip color area",4:"Three-chip color area",5:"Color sequential area",7:"Trilinear",8:"Color sequential linear"};
+      if (smLabels[sm]) info.sensingMethod = smLabels[sm];
+    }
+
+    // Date
+    if (exifIFD[piexif.ExifIFD.DateTimeOriginal]) info.dateOriginal = exifIFD[piexif.ExifIFD.DateTimeOriginal].replace(/\0/g,"");
+    else if (exifIFD[piexif.ExifIFD.DateTimeDigitized]) info.dateOriginal = exifIFD[piexif.ExifIFD.DateTimeDigitized].replace(/\0/g,"");
+
+    // Image dimensions from EXIF
+    if (exifIFD[piexif.ExifIFD.PixelXDimension]) info.width = exifIFD[piexif.ExifIFD.PixelXDimension];
+    if (exifIFD[piexif.ExifIFD.PixelYDimension]) info.height = exifIFD[piexif.ExifIFD.PixelYDimension];
+
+    // GPS presence (don't expose actual coordinates — just note presence)
+    var hasGPS = false;
+    if (gps[piexif.GPSIFD.GPSLatitude] && gps[piexif.GPSIFD.GPSLongitude]) hasGPS = true;
+    info.hasGPS = hasGPS;
+
+    // Check if any meaningful data was found
+    var hasAny = info.make || info.model || info.focalLength || info.aperture || info.shutter || info.iso || info.dateOriginal;
+    return hasAny ? info : null;
+
+  } catch(ex) {
+    return null;
+  }
+}
+
+// ── S42: Build camera info HTML panel ──
+function buildCameraInfoHTML(cam) {
+  if (!cam) return "";
+  var h = '<div style="margin-top:8px;padding:12px 14px;background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);border-radius:8px">';
+  h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#2563eb;margin-bottom:8px;display:flex;align-items:center;gap:6px">';
+  h += '<span style="font-size:14px">📷</span> Camera Metadata Detected</div>';
+  // Camera line
+  var camLine = [];
+  if (cam.make && cam.model) {
+    // Avoid duplication: if model starts with make, just show model
+    if (cam.model.toLowerCase().indexOf(cam.make.toLowerCase()) === 0) camLine.push(cam.model);
+    else camLine.push(cam.make + " " + cam.model);
+  } else if (cam.model) camLine.push(cam.model);
+  else if (cam.make) camLine.push(cam.make);
+  if (cam.lens) camLine.push(cam.lens);
+  if (camLine.length > 0) {
+    h += '<div style="font-size:13px;color:#1a1a1a;font-weight:500;margin-bottom:4px">' + camLine.join(" · ").replace(/</g,"&lt;") + '</div>';
+  }
+  // Settings line
+  var settings = [];
+  if (cam.focalLength) settings.push(cam.focalLength);
+  if (cam.aperture) settings.push(cam.aperture);
+  if (cam.shutter) settings.push(cam.shutter);
+  if (cam.iso) settings.push(cam.iso);
+  if (settings.length > 0) {
+    h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:11px;color:#555;margin-bottom:4px">' + settings.join(" · ") + '</div>';
+  }
+  // Detail line
+  var details = [];
+  if (cam.sceneType) details.push(cam.sceneType);
+  if (cam.sensingMethod) details.push(cam.sensingMethod + " sensor");
+  if (cam.hasGPS) details.push("GPS present");
+  if (cam.dateOriginal) details.push(cam.dateOriginal);
+  if (details.length > 0) {
+    h += '<div style="font-size:11px;color:#888">' + details.join(" · ").replace(/</g,"&lt;") + '</div>';
+  }
+  // Caveat
+  h += '<div style="font-size:10px;color:#aaa;margin-top:6px;line-height:1.4;font-style:italic">EXIF metadata is informational only — it can be added or removed from any file and is not a guarantee of camera origin.</div>';
+  h += '</div>';
+  return h;
+}
+
+// ── S42: Extract PDF metadata ──
+// Parses the PDF Info dictionary from the file trailer.
+function extractPDFInfo(arrayBuffer) {
+  try {
+    var bytes = new Uint8Array(arrayBuffer);
+    // Quick magic check: %PDF
+    if (bytes[0] !== 0x25 || bytes[1] !== 0x50 || bytes[2] !== 0x44 || bytes[3] !== 0x46) return null;
+
+    // Convert to string for regex parsing — only need first ~8KB and last ~8KB
+    // PDF Info dict can be anywhere, but trailer + info dict are usually near the end
+    var headSize = Math.min(bytes.length, 8192);
+    var tailSize = Math.min(bytes.length, 16384);
+    var tailStart = Math.max(0, bytes.length - tailSize);
+    var headStr = new TextDecoder("latin1").decode(bytes.subarray(0, headSize));
+    var tailStr = new TextDecoder("latin1").decode(bytes.subarray(tailStart));
+    var fullSearch = headStr + tailStr;
+
+    var info = {};
+
+    // Extract values from PDF string literals: /Key (Value) or /Key <hex>
+    var extractField = function(key) {
+      // Match /Key (value) — handle nested parens
+      var re = new RegExp("/" + key + "\\s*\\(([^)]*(?:\\\\.[^)]*)*)\\)");
+      var m = fullSearch.match(re);
+      if (m) {
+        // Unescape PDF string escapes
+        return m[1].replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "\t")
+          .replace(/\\\(/g, "(").replace(/\\\)/g, ")").replace(/\\\\/g, "\\")
+          .replace(/[\x00-\x1f]/g, "").trim();
+      }
+      // Try hex string: /Key <hex>
+      var reHex = new RegExp("/" + key + "\\s*<([0-9A-Fa-f]+)>");
+      var mh = fullSearch.match(reHex);
+      if (mh) {
+        var hex = mh[1];
+        var decoded = "";
+        // Check for UTF-16BE BOM (FEFF)
+        if (hex.length >= 4 && hex.substring(0, 4).toUpperCase() === "FEFF") {
+          for (var i = 4; i + 3 < hex.length; i += 4) {
+            decoded += String.fromCharCode(parseInt(hex.substring(i, i + 4), 16));
+          }
+        } else {
+          for (var j = 0; j + 1 < hex.length; j += 2) {
+            decoded += String.fromCharCode(parseInt(hex.substring(j, j + 2), 16));
+          }
+        }
+        return decoded.replace(/[\x00-\x1f]/g, "").trim();
+      }
+      return null;
+    };
+
+    // Extract PDF date: D:YYYYMMDDHHmmSS or variations
+    var parsePDFDate = function(raw) {
+      if (!raw) return null;
+      var dm = raw.match(/D:(\d{4})(\d{2})?(\d{2})?(\d{2})?(\d{2})?(\d{2})?/);
+      if (!dm) return raw;
+      var y = dm[1], mo = dm[2] || "01", d = dm[3] || "01";
+      var h = dm[4] || "00", mi = dm[5] || "00", s = dm[6] || "00";
+      return y + "-" + mo + "-" + d + " " + h + ":" + mi + ":" + s;
+    };
+
+    info.title = extractField("Title");
+    info.author = extractField("Author");
+    info.creator = extractField("Creator");
+    info.producer = extractField("Producer");
+    info.subject = extractField("Subject");
+    var cd = extractField("CreationDate");
+    var md = extractField("ModDate");
+    info.creationDate = parsePDFDate(cd);
+    info.modDate = parsePDFDate(md);
+
+    // PDF version from header
+    var verMatch = headStr.match(/%PDF-(\d+\.\d+)/);
+    if (verMatch) info.pdfVersion = verMatch[1];
+
+    // Check if anything meaningful was found
+    var hasAny = info.title || info.author || info.creator || info.producer || info.creationDate;
+    return hasAny ? info : null;
+  } catch(ex) { return null; }
+}
+
+function buildPDFInfoHTML(pdf) {
+  if (!pdf) return "";
+  var h = '<div style="margin-top:8px;padding:12px 14px;background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);border-radius:8px">';
+  h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#2563eb;margin-bottom:8px;display:flex;align-items:center;gap:6px">';
+  h += '<span style="font-size:14px">📄</span> PDF Document Metadata</div>';
+  var rows = [];
+  if (pdf.title) rows.push('<span style="color:#888">Title:</span> ' + pdf.title.replace(/</g,"&lt;"));
+  if (pdf.author) rows.push('<span style="color:#888">Author:</span> ' + pdf.author.replace(/</g,"&lt;"));
+  if (pdf.creator) rows.push('<span style="color:#888">Creator:</span> ' + pdf.creator.replace(/</g,"&lt;"));
+  if (pdf.producer) rows.push('<span style="color:#888">Producer:</span> ' + pdf.producer.replace(/</g,"&lt;"));
+  if (pdf.subject) rows.push('<span style="color:#888">Subject:</span> ' + pdf.subject.replace(/</g,"&lt;"));
+  if (pdf.creationDate) rows.push('<span style="color:#888">Created:</span> ' + pdf.creationDate);
+  if (pdf.modDate) rows.push('<span style="color:#888">Modified:</span> ' + pdf.modDate);
+  if (pdf.pdfVersion) rows.push('<span style="color:#888">PDF Version:</span> ' + pdf.pdfVersion);
+  if (rows.length > 0) {
+    h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;color:#555;line-height:1.8">' + rows.join('<br>') + '</div>';
+  }
+  h += '<div style="font-size:10px;color:#aaa;margin-top:6px;line-height:1.4;font-style:italic">PDF metadata is informational — it can be edited with standard tools and is not a guarantee of authorship.</div>';
+  h += '</div>';
+  return h;
+}
+
+// ── S42: Extract Office document metadata (DOCX/XLSX/PPTX) ──
+// These are ZIP archives with docProps/core.xml and docProps/app.xml
+async function extractOfficeInfo(file, arrayBuffer) {
+  try {
+    var ext = file.name ? file.name.toLowerCase().split(".").pop() : "";
+    if (ext !== "docx" && ext !== "xlsx" && ext !== "pptx" && ext !== "doc" && ext !== "xls" && ext !== "ppt") return null;
+    // .doc/.xls/.ppt are OLE2 — not ZIP-based. We only handle OOXML here.
+    if (ext === "doc" || ext === "xls" || ext === "ppt") return null;
+
+    // ZIP local file header signature: PK\x03\x04
+    var bytes = new Uint8Array(arrayBuffer);
+    if (bytes[0] !== 0x50 || bytes[1] !== 0x4B || bytes[2] !== 0x03 || bytes[3] !== 0x04) return null;
+
+    // Minimal ZIP parser — find central directory entries, extract core.xml and app.xml
+    var files = {};
+    var zipFindFiles = function() {
+      // Find End of Central Directory Record (EOCD)
+      var eocdPos = -1;
+      for (var i = bytes.length - 22; i >= Math.max(0, bytes.length - 65557); i--) {
+        if (bytes[i]===0x50 && bytes[i+1]===0x4B && bytes[i+2]===0x05 && bytes[i+3]===0x06) {
+          eocdPos = i; break;
+        }
+      }
+      if (eocdPos < 0) return;
+      var dv = new DataView(arrayBuffer);
+      var cdOffset = dv.getUint32(eocdPos + 16, true);
+      var cdSize = dv.getUint32(eocdPos + 12, true);
+      var numEntries = dv.getUint16(eocdPos + 10, true);
+
+      var pos = cdOffset;
+      for (var e = 0; e < numEntries && pos + 46 <= bytes.length; e++) {
+        if (bytes[pos]!==0x50||bytes[pos+1]!==0x4B||bytes[pos+2]!==0x01||bytes[pos+3]!==0x02) break;
+        var compMethod = dv.getUint16(pos + 10, true);
+        var compSize = dv.getUint32(pos + 20, true);
+        var uncompSize = dv.getUint32(pos + 24, true);
+        var fnLen = dv.getUint16(pos + 28, true);
+        var extraLen = dv.getUint16(pos + 30, true);
+        var commentLen = dv.getUint16(pos + 32, true);
+        var localOffset = dv.getUint32(pos + 42, true);
+        var fname = new TextDecoder().decode(bytes.subarray(pos + 46, pos + 46 + fnLen));
+
+        if (fname === "docProps/core.xml" || fname === "docProps/app.xml") {
+          // Read from local file header
+          if (localOffset + 30 <= bytes.length) {
+            var lfnLen = dv.getUint16(localOffset + 26, true);
+            var lextraLen = dv.getUint16(localOffset + 28, true);
+            var dataStart = localOffset + 30 + lfnLen + lextraLen;
+            if (compMethod === 0 && dataStart + uncompSize <= bytes.length) {
+              // Stored (uncompressed)
+              files[fname] = new TextDecoder().decode(bytes.subarray(dataStart, dataStart + uncompSize));
+            } else if (compMethod === 8) {
+              // Deflated — use DecompressionStream if available
+              // Fallback: skip if no decompression API
+              try {
+                if (typeof DecompressionStream !== "undefined") {
+                  files[fname] = { compressed: bytes.subarray(dataStart, dataStart + compSize), uncompSize: uncompSize };
+                }
+              } catch(ex) {}
+            }
+          }
+        }
+        pos += 46 + fnLen + extraLen + commentLen;
+      }
+    };
+
+    zipFindFiles();
+
+    // Decompress any deflated entries
+    for (var key in files) {
+      if (files[key] && typeof files[key] === "object" && files[key].compressed) {
+        try {
+          // Use DecompressionStream API (available in modern browsers)
+          var ds = new DecompressionStream("raw");
+          var writer = ds.writable.getWriter();
+          var reader = ds.readable.getReader();
+          writer.write(files[key].compressed);
+          writer.close();
+          var chunks = []; var totalLen = 0;
+          while (true) {
+            var r = await reader.read();
+            if (r.done) break;
+            chunks.push(r.value);
+            totalLen += r.value.length;
+          }
+          var result = new Uint8Array(totalLen); var off = 0;
+          for (var ci = 0; ci < chunks.length; ci++) { result.set(chunks[ci], off); off += chunks[ci].length; }
+          files[key] = new TextDecoder().decode(result);
+        } catch(ex) {
+          delete files[key];
+        }
+      }
+    }
+
+    var info = {};
+    var typeLabels = { docx: "Word Document", xlsx: "Spreadsheet", pptx: "Presentation" };
+    info.fileType = typeLabels[ext] || ext.toUpperCase();
+
+    // Parse core.xml (Dublin Core metadata)
+    if (files["docProps/core.xml"]) {
+      var cx = files["docProps/core.xml"];
+      var xv = function(tag) {
+        // Handle namespaced tags: dc:creator, cp:lastModifiedBy, dcterms:created, etc.
+        var patterns = [
+          new RegExp("<" + tag + "[^>]*>([^<]*)</" + tag + ">"),
+          new RegExp("<\\w+:" + tag + "[^>]*>([^<]*)</\\w+:" + tag + ">"),
+        ];
+        for (var pi = 0; pi < patterns.length; pi++) {
+          var m = cx.match(patterns[pi]);
+          if (m && m[1].trim()) return m[1].trim();
+        }
+        return null;
+      };
+      info.creator = xv("creator");
+      info.lastModifiedBy = xv("lastModifiedBy");
+      info.created = xv("created");
+      info.modified = xv("modified");
+      info.title = xv("title");
+      info.subject = xv("subject");
+      info.description = xv("description");
+      info.revision = xv("revision");
+      info.category = xv("category");
+    }
+
+    // Parse app.xml (application metadata)
+    if (files["docProps/app.xml"]) {
+      var ax = files["docProps/app.xml"];
+      var xva = function(tag) {
+        var m = ax.match(new RegExp("<" + tag + ">([^<]*)</" + tag + ">"));
+        return m ? m[1].trim() : null;
+      };
+      info.application = xva("Application");
+      info.appVersion = xva("AppVersion");
+      info.totalTime = xva("TotalTime");
+      info.pages = xva("Pages");
+      info.words = xva("Words");
+      info.characters = xva("Characters");
+      info.paragraphs = xva("Paragraphs");
+      info.slides = xva("Slides");
+      info.company = xva("Company");
+      info.template = xva("Template");
+    }
+
+    var hasAny = info.creator || info.application || info.created || info.title || info.lastModifiedBy;
+    return hasAny ? info : null;
+  } catch(ex) { return null; }
+}
+
+function buildOfficeInfoHTML(ofc) {
+  if (!ofc) return "";
+  var h = '<div style="margin-top:8px;padding:12px 14px;background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);border-radius:8px">';
+  h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#2563eb;margin-bottom:8px;display:flex;align-items:center;gap:6px">';
+  h += '<span style="font-size:14px">📝</span> ' + (ofc.fileType || "Office") + ' Metadata</div>';
+  // Application line
+  var appLine = [];
+  if (ofc.application) appLine.push(ofc.application + (ofc.appVersion ? " " + ofc.appVersion : ""));
+  if (ofc.company) appLine.push(ofc.company);
+  if (appLine.length > 0) {
+    h += '<div style="font-size:13px;color:#1a1a1a;font-weight:500;margin-bottom:4px">' + appLine.join(" · ").replace(/</g,"&lt;") + '</div>';
+  }
+  var rows = [];
+  if (ofc.title) rows.push('<span style="color:#888">Title:</span> ' + ofc.title.replace(/</g,"&lt;"));
+  if (ofc.creator) rows.push('<span style="color:#888">Author:</span> ' + ofc.creator.replace(/</g,"&lt;"));
+  if (ofc.lastModifiedBy && ofc.lastModifiedBy !== ofc.creator) rows.push('<span style="color:#888">Last modified by:</span> ' + ofc.lastModifiedBy.replace(/</g,"&lt;"));
+  if (ofc.created) {
+    try { rows.push('<span style="color:#888">Created:</span> ' + new Date(ofc.created).toLocaleString()); } catch(e) { rows.push('<span style="color:#888">Created:</span> ' + ofc.created); }
+  }
+  if (ofc.modified) {
+    try { rows.push('<span style="color:#888">Modified:</span> ' + new Date(ofc.modified).toLocaleString()); } catch(e) { rows.push('<span style="color:#888">Modified:</span> ' + ofc.modified); }
+  }
+  if (ofc.revision) rows.push('<span style="color:#888">Revision:</span> ' + ofc.revision);
+  if (ofc.totalTime && ofc.totalTime !== "0") rows.push('<span style="color:#888">Total editing time:</span> ' + ofc.totalTime + ' minutes');
+  // Content stats
+  var stats = [];
+  if (ofc.pages) stats.push(ofc.pages + " pages");
+  if (ofc.words) stats.push(ofc.words + " words");
+  if (ofc.slides) stats.push(ofc.slides + " slides");
+  if (ofc.paragraphs) stats.push(ofc.paragraphs + " paragraphs");
+  if (stats.length > 0) rows.push('<span style="color:#888">Content:</span> ' + stats.join(", "));
+  if (ofc.template && ofc.template !== "Normal.dotm" && ofc.template !== "Normal") rows.push('<span style="color:#888">Template:</span> ' + ofc.template.replace(/</g,"&lt;"));
+  if (rows.length > 0) {
+    h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;color:#555;line-height:1.8">' + rows.join('<br>') + '</div>';
+  }
+  h += '<div style="font-size:10px;color:#aaa;margin-top:6px;line-height:1.4;font-style:italic">Office document metadata is informational — it can be edited and is not a guarantee of authorship or editing history.</div>';
+  h += '</div>';
+  return h;
+}
+
+// ── S42: Extract Audio metadata (MP3 ID3v2, FLAC Vorbis, WAV RIFF INFO) ──
+function extractAudioInfo(file, arrayBuffer) {
+  try {
+    var ext = file.name ? file.name.toLowerCase().split(".").pop() : "";
+    var bytes = new Uint8Array(arrayBuffer);
+
+    // ── MP3 ID3v2 ──
+    if (ext === "mp3" || (bytes[0]===0x49 && bytes[1]===0x44 && bytes[2]===0x33)) {
+      return extractID3v2(bytes);
+    }
+
+    // ── FLAC ──
+    if (ext === "flac" || (bytes[0]===0x66 && bytes[1]===0x4C && bytes[2]===0x61 && bytes[3]===0x43)) {
+      return extractFLAC(bytes);
+    }
+
+    // ── WAV RIFF ──
+    if (ext === "wav" || (bytes[0]===0x52 && bytes[1]===0x49 && bytes[2]===0x46 && bytes[3]===0x46 &&
+        bytes[8]===0x57 && bytes[9]===0x41 && bytes[10]===0x56 && bytes[11]===0x45)) {
+      return extractWAVInfo(bytes);
+    }
+
+    // ── OGG/Vorbis ──
+    if (ext === "ogg" || (bytes[0]===0x4F && bytes[1]===0x67 && bytes[2]===0x67 && bytes[3]===0x53)) {
+      return extractOGGInfo(bytes);
+    }
+
+    // ── M4A/AAC (MP4 container) ──
+    if (ext === "m4a" || ext === "aac" || ext === "m4b" || ext === "m4p") {
+      return extractMP4Audio(bytes);
+    }
+
+    return null;
+  } catch(ex) { return null; }
+}
+
+function extractID3v2(bytes) {
+  // ID3v2 header: "ID3" + version(2) + flags(1) + size(4 synchsafe)
+  if (bytes.length < 10 || bytes[0]!==0x49 || bytes[1]!==0x44 || bytes[2]!==0x33) return null;
+  var version = bytes[3]; // 2=v2.2, 3=v2.3, 4=v2.4
+  var size = (bytes[6] << 21) | (bytes[7] << 14) | (bytes[8] << 7) | bytes[9];
+  var info = { format: "MP3 (ID3v2." + version + ")" };
+
+  var pos = 10;
+  var end = Math.min(10 + size, bytes.length);
+  var frameIdLen = version < 3 ? 3 : 4;
+  var frameSizeLen = version < 3 ? 3 : 4;
+  var frameHeaderLen = version < 3 ? 6 : 10;
+
+  // ID3 tag name mapping
+  var tagMap = version < 3 ? {
+    "TT2": "title", "TP1": "artist", "TAL": "album", "TYE": "year",
+    "TCO": "genre", "TEN": "encoder", "TSS": "encoderSettings"
+  } : {
+    "TIT2": "title", "TPE1": "artist", "TALB": "album", "TDRC": "year",
+    "TYER": "year", "TCON": "genre", "TSSE": "encoderSettings",
+    "TENC": "encoder", "TPE2": "albumArtist", "TCOM": "composer",
+    "TRCK": "track", "TPOS": "disc", "TBPM": "bpm", "TSRC": "isrc"
+  };
+
+  while (pos + frameHeaderLen < end) {
+    // Check for padding (all zeros)
+    if (bytes[pos] === 0) break;
+
+    var frameId;
+    var frameSize;
+    if (version < 3) {
+      frameId = String.fromCharCode(bytes[pos], bytes[pos+1], bytes[pos+2]);
+      frameSize = (bytes[pos+3] << 16) | (bytes[pos+4] << 8) | bytes[pos+5];
+    } else {
+      frameId = String.fromCharCode(bytes[pos], bytes[pos+1], bytes[pos+2], bytes[pos+3]);
+      if (version === 4) {
+        // v2.4 uses synchsafe integers for frame size
+        frameSize = (bytes[pos+4] << 21) | (bytes[pos+5] << 14) | (bytes[pos+6] << 7) | bytes[pos+7];
+      } else {
+        frameSize = (bytes[pos+4] << 24) | (bytes[pos+5] << 16) | (bytes[pos+6] << 8) | bytes[pos+7];
+      }
+    }
+
+    if (frameSize <= 0 || pos + frameHeaderLen + frameSize > end) break;
+
+    var key = tagMap[frameId];
+    if (key && frameId[0] === "T") {
+      // Text frame: encoding byte + text
+      var dataStart = pos + frameHeaderLen;
+      var encoding = bytes[dataStart];
+      var textBytes = bytes.subarray(dataStart + 1, dataStart + frameSize);
+      var text = "";
+      if (encoding === 0 || encoding === 3) {
+        // ISO-8859-1 or UTF-8
+        text = new TextDecoder(encoding === 3 ? "utf-8" : "latin1").decode(textBytes);
+      } else if (encoding === 1 || encoding === 2) {
+        // UTF-16 with/without BOM
+        text = new TextDecoder("utf-16le").decode(textBytes);
+        if (text.charCodeAt(0) === 0xFFFE || text.charCodeAt(0) === 0xFEFF) text = text.substring(1);
+      }
+      text = text.replace(/\0/g, "").trim();
+      if (text) info[key] = text;
+    }
+
+    pos += frameHeaderLen + frameSize;
+  }
+
+  var hasAny = info.title || info.artist || info.album || info.encoder || info.encoderSettings;
+  return hasAny ? info : null;
+}
+
+function extractFLAC(bytes) {
+  // fLaC + METADATA_BLOCK_HEADER(4 bytes each) then VORBIS_COMMENT block
+  if (bytes.length < 8) return null;
+  var info = { format: "FLAC" };
+  var pos = 4; // skip "fLaC"
+
+  while (pos + 4 <= bytes.length) {
+    var blockHeader = bytes[pos];
+    var isLast = (blockHeader & 0x80) !== 0;
+    var blockType = blockHeader & 0x7F;
+    var blockSize = (bytes[pos+1] << 16) | (bytes[pos+2] << 8) | bytes[pos+3];
+    pos += 4;
+
+    if (blockType === 0 && blockSize >= 18) {
+      // STREAMINFO — extract sample rate, channels, bits per sample, total samples
+      var sr = (bytes[pos+10] << 12) | (bytes[pos+11] << 4) | ((bytes[pos+12] >> 4) & 0x0F);
+      var ch = ((bytes[pos+12] >> 1) & 0x07) + 1;
+      var bps = ((bytes[pos+12] & 0x01) << 4) | ((bytes[pos+13] >> 4) & 0x0F);
+      bps += 1;
+      info.sampleRate = sr + " Hz";
+      info.channels = ch;
+      info.bitsPerSample = bps + "-bit";
+    }
+
+    if (blockType === 4 && pos + blockSize <= bytes.length) {
+      // VORBIS_COMMENT
+      var vc = extractVorbisComment(bytes.subarray(pos, pos + blockSize));
+      if (vc) Object.assign(info, vc);
+    }
+
+    pos += blockSize;
+    if (isLast) break;
+  }
+
+  var hasAny = info.title || info.artist || info.album || info.encoder || info.sampleRate;
+  return hasAny ? info : null;
+}
+
+function extractVorbisComment(data) {
+  try {
+    var dv = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    var pos = 0;
+    // Vendor string
+    var vendorLen = dv.getUint32(pos, true); pos += 4;
+    var vendor = new TextDecoder().decode(data.subarray(pos, pos + vendorLen));
+    pos += vendorLen;
+    var info = {};
+    if (vendor) info.encoder = vendor;
+    // Comment count
+    var numComments = dv.getUint32(pos, true); pos += 4;
+    var tagMap = { "TITLE": "title", "ARTIST": "artist", "ALBUM": "album", "DATE": "year",
+      "GENRE": "genre", "TRACKNUMBER": "track", "ENCODER": "encoder",
+      "ALBUMARTIST": "albumArtist", "COMPOSER": "composer", "ISRC": "isrc" };
+    for (var i = 0; i < numComments && pos + 4 <= data.length; i++) {
+      var commentLen = dv.getUint32(pos, true); pos += 4;
+      if (pos + commentLen > data.length) break;
+      var comment = new TextDecoder().decode(data.subarray(pos, pos + commentLen));
+      pos += commentLen;
+      var eq = comment.indexOf("=");
+      if (eq > 0) {
+        var k = comment.substring(0, eq).toUpperCase();
+        var v = comment.substring(eq + 1);
+        if (tagMap[k] && v) info[tagMap[k]] = v;
+      }
+    }
+    return info;
+  } catch(ex) { return null; }
+}
+
+function extractWAVInfo(bytes) {
+  // RIFF WAVE — look for LIST/INFO chunk and fmt chunk
+  if (bytes.length < 44) return null;
+  var info = { format: "WAV" };
+  var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+  var pos = 12; // skip RIFF + size + WAVE
+  while (pos + 8 <= bytes.length) {
+    var fourcc = String.fromCharCode(bytes[pos], bytes[pos+1], bytes[pos+2], bytes[pos+3]);
+    var size = dv.getUint32(pos + 4, true);
+    if (pos + 8 + size > bytes.length) break;
+
+    if (fourcc === "fmt " && size >= 16) {
+      var audioFormat = dv.getUint16(pos + 8, true);
+      var channels = dv.getUint16(pos + 10, true);
+      var sampleRate = dv.getUint32(pos + 12, true);
+      var bitsPerSample = dv.getUint16(pos + 22, true);
+      info.audioFormat = audioFormat === 1 ? "PCM" : audioFormat === 3 ? "IEEE Float" : "Compressed (" + audioFormat + ")";
+      info.channels = channels;
+      info.sampleRate = sampleRate + " Hz";
+      info.bitsPerSample = bitsPerSample + "-bit";
+    }
+
+    if (fourcc === "LIST") {
+      var listType = String.fromCharCode(bytes[pos+8], bytes[pos+9], bytes[pos+10], bytes[pos+11]);
+      if (listType === "INFO") {
+        var ip = pos + 12;
+        var listEnd = pos + 8 + size;
+        var infoMap = { "IART": "artist", "INAM": "title", "IPRD": "album", "ICRD": "year",
+          "IGNR": "genre", "ISFT": "software", "ICMT": "comment", "IENG": "engineer", "ITCH": "technician" };
+        while (ip + 8 <= listEnd) {
+          var ifcc = String.fromCharCode(bytes[ip], bytes[ip+1], bytes[ip+2], bytes[ip+3]);
+          var isize = dv.getUint32(ip + 4, true);
+          if (ip + 8 + isize > listEnd) break;
+          var ikey = infoMap[ifcc];
+          if (ikey) {
+            var val = new TextDecoder("latin1").decode(bytes.subarray(ip + 8, ip + 8 + isize)).replace(/\0/g, "").trim();
+            if (val) info[ikey] = val;
+          }
+          ip += 8 + isize + (isize & 1);
+        }
+      }
+    }
+
+    pos += 8 + size + (size & 1);
+  }
+
+  var hasAny = info.title || info.artist || info.software || info.sampleRate;
+  return hasAny ? info : null;
+}
+
+function extractOGGInfo(bytes) {
+  // OGG — find Vorbis comment header (packet starting with \x03vorbis)
+  try {
+    var info = { format: "OGG Vorbis" };
+    // Search for vorbis comment header marker: 0x03 + "vorbis"
+    var marker = [0x03, 0x76, 0x6F, 0x72, 0x62, 0x69, 0x73];
+    for (var i = 0; i < Math.min(bytes.length - 100, 65536); i++) {
+      var match = true;
+      for (var j = 0; j < marker.length; j++) {
+        if (bytes[i + j] !== marker[j]) { match = false; break; }
+      }
+      if (match) {
+        var vc = extractVorbisComment(bytes.subarray(i + marker.length));
+        if (vc) Object.assign(info, vc);
+        break;
+      }
+    }
+    var hasAny = info.title || info.artist || info.album || info.encoder;
+    return hasAny ? info : null;
+  } catch(ex) { return null; }
+}
+
+function extractMP4Audio(bytes) {
+  // M4A/AAC — parse MP4 atoms for metadata (moov/udta/meta/ilst)
+  // Reuse the video MP4 extractor
+  var info = extractMP4Meta(bytes);
+  if (info) info.format = "M4A/AAC";
+  return info;
+}
+
+function buildAudioInfoHTML(aud) {
+  if (!aud) return "";
+  var h = '<div style="margin-top:8px;padding:12px 14px;background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);border-radius:8px">';
+  h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#2563eb;margin-bottom:8px;display:flex;align-items:center;gap:6px">';
+  h += '<span style="font-size:14px">🎵</span> Audio File Metadata</div>';
+  // Format / encoder line
+  var topLine = [];
+  if (aud.format) topLine.push(aud.format);
+  if (aud.encoder && aud.encoder !== aud.format) topLine.push(aud.encoder);
+  if (topLine.length > 0) {
+    h += '<div style="font-size:13px;color:#1a1a1a;font-weight:500;margin-bottom:4px">' + topLine.join(" · ").replace(/</g,"&lt;") + '</div>';
+  }
+  var rows = [];
+  if (aud.title) rows.push('<span style="color:#888">Title:</span> ' + aud.title.replace(/</g,"&lt;"));
+  if (aud.artist) rows.push('<span style="color:#888">Artist:</span> ' + aud.artist.replace(/</g,"&lt;"));
+  if (aud.albumArtist && aud.albumArtist !== aud.artist) rows.push('<span style="color:#888">Album Artist:</span> ' + aud.albumArtist.replace(/</g,"&lt;"));
+  if (aud.composer) rows.push('<span style="color:#888">Composer:</span> ' + aud.composer.replace(/</g,"&lt;"));
+  if (aud.album) rows.push('<span style="color:#888">Album:</span> ' + aud.album.replace(/</g,"&lt;"));
+  if (aud.track) rows.push('<span style="color:#888">Track:</span> ' + aud.track);
+  if (aud.year) rows.push('<span style="color:#888">Year:</span> ' + aud.year);
+  if (aud.genre) rows.push('<span style="color:#888">Genre:</span> ' + aud.genre.replace(/</g,"&lt;"));
+  if (aud.isrc) rows.push('<span style="color:#888">ISRC:</span> ' + aud.isrc);
+  if (aud.encoderSettings) rows.push('<span style="color:#888">Encoder settings:</span> ' + aud.encoderSettings.replace(/</g,"&lt;"));
+  if (aud.software) rows.push('<span style="color:#888">Software:</span> ' + aud.software.replace(/</g,"&lt;"));
+  // Technical details
+  var tech = [];
+  if (aud.sampleRate) tech.push(aud.sampleRate);
+  if (aud.bitsPerSample) tech.push(aud.bitsPerSample);
+  if (aud.channels) tech.push(aud.channels + "ch");
+  if (aud.audioFormat) tech.push(aud.audioFormat);
+  if (tech.length > 0) rows.push('<span style="color:#888">Audio:</span> ' + tech.join(" · "));
+  if (rows.length > 0) {
+    h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;color:#555;line-height:1.8">' + rows.join('<br>') + '</div>';
+  }
+  h += '<div style="font-size:10px;color:#aaa;margin-top:6px;line-height:1.4;font-style:italic">Audio metadata is informational — tags can be edited with standard tools and are not a guarantee of origin.</div>';
+  h += '</div>';
+  return h;
+}
+
+// ── S42: Extract Video metadata (MP4/MOV/MKV/AVI) ──
+function extractVideoInfo(file, arrayBuffer) {
+  try {
+    var ext = file.name ? file.name.toLowerCase().split(".").pop() : "";
+    var bytes = new Uint8Array(arrayBuffer);
+
+    // MP4 / MOV — look for ftyp box
+    if (ext === "mp4" || ext === "mov" || ext === "m4v" ||
+        (bytes.length > 8 && String.fromCharCode(bytes[4],bytes[5],bytes[6],bytes[7]) === "ftyp")) {
+      var info = extractMP4Meta(bytes);
+      if (info) info.format = ext.toUpperCase();
+      return info;
+    }
+
+    // MKV/WebM — EBML header
+    if (ext === "mkv" || ext === "webm" ||
+        (bytes[0]===0x1A && bytes[1]===0x45 && bytes[2]===0xDF && bytes[3]===0xA3)) {
+      return extractMKVInfo(bytes, ext);
+    }
+
+    // AVI — RIFF AVI
+    if (ext === "avi" ||
+        (bytes[0]===0x52 && bytes[1]===0x49 && bytes[2]===0x46 && bytes[3]===0x46 &&
+         bytes[8]===0x41 && bytes[9]===0x56 && bytes[10]===0x49 && bytes[11]===0x20)) {
+      return extractAVIInfo(bytes);
+    }
+
+    return null;
+  } catch(ex) { return null; }
+}
+
+// ── MP4/MOV atom parser ──
+function extractMP4Meta(bytes) {
+  try {
+    var info = {};
+    var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+    // Recursive atom finder
+    var findAtom = function(start, end, path) {
+      var pos = start;
+      while (pos + 8 <= end) {
+        var size = dv.getUint32(pos);
+        var type = String.fromCharCode(bytes[pos+4], bytes[pos+5], bytes[pos+6], bytes[pos+7]);
+        if (size < 8) { if (size === 0) break; pos += 8; continue; }
+        if (size > end - pos) break;
+        if (type === path[0]) {
+          if (path.length === 1) return { offset: pos, size: size };
+          return findAtom(pos + 8, pos + size, path.slice(1));
+        }
+        pos += size;
+      }
+      return null;
+    };
+
+    // Get creation/modification time from mvhd atom
+    var moov = findAtom(0, bytes.length, ["moov"]);
+    if (moov) {
+      var mvhd = findAtom(moov.offset + 8, moov.offset + moov.size, ["mvhd"]);
+      if (mvhd) {
+        var mvhdData = mvhd.offset + 8;
+        var version = bytes[mvhdData];
+        var creationTime, modTime, timescale, duration;
+        if (version === 1) {
+          // 64-bit timestamps — use getBigUint64 if available, otherwise skip
+          if (typeof dv.getBigUint64 === "function") {
+            creationTime = Number(dv.getBigUint64(mvhdData + 4));
+          } else {
+            // Fallback: read high 32 bits only (sufficient for dates before ~2106)
+            creationTime = dv.getUint32(mvhdData + 8);
+          }
+          timescale = dv.getUint32(mvhdData + 20);
+          if (typeof dv.getBigUint64 === "function") {
+            duration = Number(dv.getBigUint64(mvhdData + 24));
+          } else {
+            duration = dv.getUint32(mvhdData + 28);
+          }
+        } else {
+          creationTime = dv.getUint32(mvhdData + 4);
+          timescale = dv.getUint32(mvhdData + 12);
+          duration = dv.getUint32(mvhdData + 16);
+        }
+        // MP4 epoch: 1904-01-01
+        if (creationTime > 0) {
+          var mp4Epoch = Date.UTC(1904, 0, 1) / 1000;
+          var jsDate = new Date((mp4Epoch + creationTime) * 1000);
+          if (jsDate.getFullYear() > 1970 && jsDate.getFullYear() < 2100) {
+            info.created = jsDate.toISOString().replace(/T/, " ").replace(/\.\d+Z/, "");
+          }
+        }
+        if (timescale > 0 && duration > 0) {
+          var durationSec = duration / timescale;
+          var mins = Math.floor(durationSec / 60);
+          var secs = Math.floor(durationSec % 60);
+          info.duration = mins + ":" + (secs < 10 ? "0" : "") + secs;
+        }
+      }
+
+      // Encoder software — look in udta or meta/ilst
+      // Simple approach: search for known encoder markers in moov region
+      var moovBytes = bytes.subarray(moov.offset, moov.offset + Math.min(moov.size, 65536));
+      var moovStr = new TextDecoder("latin1").decode(moovBytes);
+
+      // Look for "\xA9too" (encoding tool) in ilst
+      var toolIdx = moovStr.indexOf("\xA9too");
+      if (toolIdx > 0 && toolIdx + 20 < moovStr.length) {
+        // The data follows in a "data" atom after the tool atom header
+        var searchStr = moovStr.substring(toolIdx);
+        var dataIdx = searchStr.indexOf("data");
+        if (dataIdx > 0 && dataIdx < 40) {
+          var textStart = dataIdx + 16; // skip data atom header (16 bytes: size + type + flags + locale)
+          // Find the tool atom size to know bounds
+          var ts = Math.min(searchStr.length, textStart + 200);
+          var toolText = searchStr.substring(textStart, ts);
+          // Trim at first null or control char
+          var nullIdx = toolText.search(/[\x00-\x08\x0b\x0c\x0e-\x1f]/);
+          if (nullIdx > 0) toolText = toolText.substring(0, nullIdx);
+          toolText = toolText.trim();
+          if (toolText.length > 0 && toolText.length < 150) info.encoder = toolText;
+        }
+      }
+
+      // Look for "\xA9nam" (name/title)
+      var extractItlsTag = function(tag) {
+        var idx = moovStr.indexOf(tag);
+        if (idx < 0 || idx + 20 >= moovStr.length) return null;
+        var s = moovStr.substring(idx);
+        var di = s.indexOf("data");
+        if (di < 0 || di > 40) return null;
+        var t = s.substring(di + 16, Math.min(s.length, di + 216));
+        var ni = t.search(/[\x00-\x08\x0b\x0c\x0e-\x1f]/);
+        if (ni > 0) t = t.substring(0, ni);
+        t = t.trim();
+        return (t.length > 0 && t.length < 200) ? t : null;
+      };
+
+      var title = extractItlsTag("\xA9nam");
+      if (title) info.title = title;
+      var artist = extractItlsTag("\xA9ART");
+      if (artist) info.artist = artist;
+    }
+
+    // Get video track info — find trak with video handler
+    // Simplified: look for hdlr with "vide" type
+    var searchRegion = bytes.subarray(0, Math.min(bytes.length, 131072));
+    var searchStr2 = new TextDecoder("latin1").decode(searchRegion);
+    var videIdx = searchStr2.indexOf("vide");
+    if (videIdx > 0) {
+      // Look for stsd nearby to find codec info
+      // Check for avc1, hev1, hvc1, vp09, av01 codec atoms
+      var codecs = ["avc1", "hev1", "hvc1", "vp09", "av01", "mp4v"];
+      for (var ci = 0; ci < codecs.length; ci++) {
+        if (searchStr2.indexOf(codecs[ci]) > 0) {
+          var codecLabels = { "avc1": "H.264", "hev1": "H.265/HEVC", "hvc1": "H.265/HEVC",
+            "vp09": "VP9", "av01": "AV1", "mp4v": "MPEG-4" };
+          info.videoCodec = codecLabels[codecs[ci]] || codecs[ci];
+          break;
+        }
+      }
+    }
+
+    var hasAny = info.created || info.encoder || info.duration || info.title || info.videoCodec;
+    return hasAny ? info : null;
+  } catch(ex) { return null; }
+}
+
+function extractMKVInfo(bytes, ext) {
+  // MKV/WebM — EBML header. Parse muxing app and writing app from Segment/Info
+  try {
+    var info = { format: (ext || "mkv").toUpperCase() };
+    // Search for MuxingApp and WritingApp strings
+    // These are EBML elements with IDs 0x4D80 (MuxingApp) and 0x5741 (WritingApp)
+    // Simpler approach: search for known tool signatures in the first 64KB
+    var searchSize = Math.min(bytes.length, 65536);
+    var searchStr = new TextDecoder("latin1").decode(bytes.subarray(0, searchSize));
+
+    // Known MKV muxer strings
+    var muxers = ["libebml", "libmatroska", "mkvmerge", "HandBrake", "Lavf", "FFmpeg", "Google", "Chrome"];
+    for (var i = 0; i < muxers.length; i++) {
+      var idx = searchStr.indexOf(muxers[i]);
+      if (idx >= 0) {
+        // Extract surrounding text
+        var start = idx;
+        var end = Math.min(idx + 80, searchStr.length);
+        var toolStr = searchStr.substring(start, end);
+        var nullIdx = toolStr.search(/[\x00-\x08\x0b\x0c\x0e-\x1f]/);
+        if (nullIdx > 0) toolStr = toolStr.substring(0, nullIdx);
+        info.encoder = toolStr.trim();
+        break;
+      }
+    }
+
+    var hasAny = info.encoder;
+    return hasAny ? info : null;
+  } catch(ex) { return null; }
+}
+
+function extractAVIInfo(bytes) {
+  // AVI is RIFF-based — same as WAV but with "AVI " fourcc
+  try {
+    var info = { format: "AVI" };
+    var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+    var pos = 12;
+    while (pos + 8 <= bytes.length) {
+      var fourcc = String.fromCharCode(bytes[pos], bytes[pos+1], bytes[pos+2], bytes[pos+3]);
+      var size = dv.getUint32(pos + 4, true);
+      if (pos + 8 + size > bytes.length) break;
+
+      if (fourcc === "LIST") {
+        var listType = String.fromCharCode(bytes[pos+8], bytes[pos+9], bytes[pos+10], bytes[pos+11]);
+        if (listType === "INFO") {
+          var ip = pos + 12;
+          var listEnd = pos + 8 + size;
+          var infoMap = { "ISFT": "software", "ICRD": "created", "INAM": "title", "IART": "artist" };
+          while (ip + 8 <= listEnd) {
+            var ifcc = String.fromCharCode(bytes[ip], bytes[ip+1], bytes[ip+2], bytes[ip+3]);
+            var isize = dv.getUint32(ip + 4, true);
+            if (ip + 8 + isize > listEnd) break;
+            if (infoMap[ifcc]) {
+              var val = new TextDecoder("latin1").decode(bytes.subarray(ip + 8, ip + 8 + isize)).replace(/\0/g, "").trim();
+              if (val) info[infoMap[ifcc]] = val;
+            }
+            ip += 8 + isize + (isize & 1);
+          }
+        }
+      }
+
+      if (fourcc === "avih" && size >= 56) {
+        // AVI main header — microseconds per frame, width, height
+        var usPerFrame = dv.getUint32(pos + 8, true);
+        if (usPerFrame > 0) info.framerate = (1000000 / usPerFrame).toFixed(2) + " fps";
+        info.width = dv.getUint32(pos + 8 + 32, true);
+        info.height = dv.getUint32(pos + 8 + 36, true);
+        if (info.width && info.height) info.resolution = info.width + "×" + info.height;
+      }
+
+      pos += 8 + size + (size & 1);
+    }
+
+    var hasAny = info.software || info.created || info.title || info.framerate;
+    return hasAny ? info : null;
+  } catch(ex) { return null; }
+}
+
+function buildVideoInfoHTML(vid) {
+  if (!vid) return "";
+  var h = '<div style="margin-top:8px;padding:12px 14px;background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);border-radius:8px">';
+  h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#2563eb;margin-bottom:8px;display:flex;align-items:center;gap:6px">';
+  h += '<span style="font-size:14px">🎬</span> Video File Metadata</div>';
+  var topLine = [];
+  if (vid.format) topLine.push(vid.format);
+  if (vid.encoder) topLine.push(vid.encoder);
+  if (topLine.length > 0) {
+    h += '<div style="font-size:13px;color:#1a1a1a;font-weight:500;margin-bottom:4px">' + topLine.join(" · ").replace(/</g,"&lt;") + '</div>';
+  }
+  var rows = [];
+  if (vid.title) rows.push('<span style="color:#888">Title:</span> ' + vid.title.replace(/</g,"&lt;"));
+  if (vid.artist) rows.push('<span style="color:#888">Artist:</span> ' + vid.artist.replace(/</g,"&lt;"));
+  if (vid.created) rows.push('<span style="color:#888">Created:</span> ' + vid.created);
+  if (vid.duration) rows.push('<span style="color:#888">Duration:</span> ' + vid.duration);
+  if (vid.videoCodec) rows.push('<span style="color:#888">Codec:</span> ' + vid.videoCodec);
+  if (vid.resolution) rows.push('<span style="color:#888">Resolution:</span> ' + vid.resolution);
+  if (vid.framerate) rows.push('<span style="color:#888">Frame rate:</span> ' + vid.framerate);
+  if (vid.software) rows.push('<span style="color:#888">Software:</span> ' + vid.software.replace(/</g,"&lt;"));
+  if (rows.length > 0) {
+    h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;color:#555;line-height:1.8">' + rows.join('<br>') + '</div>';
+  }
+  h += '<div style="font-size:10px;color:#aaa;margin-top:6px;line-height:1.4;font-style:italic">Video metadata is informational — container metadata can be edited and is not a guarantee of origin.</div>';
+  h += '</div>';
+  return h;
+}
+
+// ── S42: Build embedded HIP metadata HTML panel ──
+function buildEmbeddedHipHTML(hipMeta) {
+  if (!hipMeta) return "";
+  var cls = {"CompleteHumanOrigin":"Complete Human Origin","HumanOriginAssisted":"Human Origin Assisted","HumanDirectedCollaborative":"Human-Directed Collaborative"}[hipMeta.classification] || hipMeta.classification_label || hipMeta.classification || "Unknown";
+  var h = '<div style="margin-top:8px;padding:12px 14px;background:rgba(37,99,235,0.03);border:1px solid rgba(37,99,235,0.12);border-radius:8px">';
+  h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#2563eb;margin-bottom:8px;display:flex;align-items:center;gap:6px">';
+  h += '<span style="font-size:13px">🔏</span> Embedded HIP Proof Data</div>';
+  h += '<div style="font-size:13px;color:#1a1a1a;font-weight:500;margin-bottom:4px">' + cls + '</div>';
+  var meta = [];
+  if (hipMeta.credential_id) meta.push('<span style="color:#888">Credential:</span> ' + hipMeta.credential_id.substring(0, 16) + '…');
+  if (hipMeta.attested_at) {
+    try { meta.push('<span style="color:#888">Attested:</span> ' + new Date(hipMeta.attested_at).toLocaleDateString("en-US",{year:"numeric",month:"short",day:"numeric"})); } catch(e) { meta.push(hipMeta.attested_at); }
+  }
+  if (hipMeta.version) meta.push('<span style="color:#888">Protocol:</span> v' + hipMeta.version);
+  if (meta.length > 0) {
+    h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;color:#555;line-height:1.8">' + meta.join('<br>') + '</div>';
+  }
+  if (hipMeta.proof_url) {
+    h += '<div style="margin-top:6px"><a href="' + hipMeta.proof_url + '" target="_blank" rel="noopener" style="font-family:\'Azeret Mono\',monospace;font-size:11px;color:#2563eb">View proof card →</a></div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+// S41/S42: Quick Verify — SHA-256 file locally, check proof registry, extract metadata
 async function hvQuickVerify(file) {
   if (!file) return;
   var resultEl = document.getElementById("hv-verify-result");
   if (!resultEl) return;
-  resultEl.innerHTML = '<div style="padding:12px;text-align:center;color:#777;font-size:13px"><span class="hv-spinner"></span>Computing hash for ' + file.name.replace(/</g,"&lt;") + '…</div>';
+  resultEl.innerHTML = '<div style="padding:12px;text-align:center;color:#777;font-size:13px"><span class="hv-spinner"></span>Analyzing ' + file.name.replace(/</g,"&lt;") + '…</div>';
 
   try {
     var ab = await file.arrayBuffer();
     var hashBuf = await crypto.subtle.digest("SHA-256", ab);
     var hash = Array.from(new Uint8Array(hashBuf)).map(function(b){return b.toString(16).padStart(2,"0")}).join("");
 
+    // S42: Extract all available metadata while registry lookup happens
+    var embeddedHip = null;
+    var cameraInfo = null;
+    var pdfInfo = null;
+    var officeInfo = null;
+    var audioInfo = null;
+    var videoInfo = null;
+    try { embeddedHip = HipMetaExtract.extract(ab); } catch(e) {}
+    try { cameraInfo = extractCameraInfo(file, ab); } catch(e) {}
+    try { pdfInfo = extractPDFInfo(ab); } catch(e) {}
+    try { officeInfo = await extractOfficeInfo(file, ab); } catch(e) {}
+    try { audioInfo = extractAudioInfo(file, ab); } catch(e) {}
+    try { videoInfo = extractVideoInfo(file, ab); } catch(e) {}
+
     resultEl.innerHTML = '<div style="padding:12px;text-align:center;color:#777;font-size:13px"><span class="hv-spinner"></span>Checking registry…</div>';
 
     var resp = await fetch(WORKER_URL + "/api/proof/" + hash);
     var data = await resp.json();
+
+    var out = "";
 
     if (data.found) {
       var cls = {"CompleteHumanOrigin":"Complete Human Origin","HumanOriginAssisted":"Human Origin Assisted","HumanDirectedCollaborative":"Human-Directed Collaborative"}[data.classification] || data.classification || "Unknown";
@@ -472,15 +1577,36 @@ async function hvQuickVerify(file) {
       var proofLink = data.short_id ? "https://hipprotocol.org/p/" + data.short_id : "https://hipprotocol.org/proof.html?hash=" + hash;
 
       if (data.sealed) {
-        resultEl.innerHTML = '<div class="hv-alert hv-alert-blue" style="margin:0"><strong>Sealed attestation found.</strong> This file has been attested but the proof details are private until the creator unseals it. <a href="' + proofLink + '" target="_blank" rel="noopener" style="color:#2563eb">View proof →</a></div>';
+        out += '<div class="hv-alert hv-alert-blue" style="margin:0"><strong>Sealed attestation found.</strong> This file has been attested but the proof details are private until the creator unseals it. <a href="' + proofLink + '" target="_blank" rel="noopener" style="color:#2563eb">View proof →</a></div>';
       } else if (data.disputes && data.disputes.length > 0) {
-        resultEl.innerHTML = '<div class="hv-alert hv-alert-amber" style="margin:0"><strong>Attested — disputed.</strong> ' + cls + ' · ' + tier + ' · ' + date + '. This attestation has ' + data.disputes.length + ' dispute(s). <a href="' + proofLink + '" target="_blank" rel="noopener" style="color:#d97706">View proof →</a></div>';
+        out += '<div class="hv-alert hv-alert-amber" style="margin:0"><strong>Attested — disputed.</strong> ' + cls + ' · ' + tier + ' · ' + date + '. This attestation has ' + data.disputes.length + ' dispute(s). <a href="' + proofLink + '" target="_blank" rel="noopener" style="color:#d97706">View proof →</a></div>';
       } else {
-        resultEl.innerHTML = '<div class="hv-alert hv-alert-green" style="margin:0"><strong>✓ Attested.</strong> ' + cls + ' · ' + tier + ' · ' + date + '. <a href="' + proofLink + '" target="_blank" rel="noopener" style="color:#16a34a">View proof card →</a></div>';
+        out += '<div class="hv-alert hv-alert-green" style="margin:0"><strong>✓ Attested.</strong> ' + cls + ' · ' + tier + ' · ' + date + '. <a href="' + proofLink + '" target="_blank" rel="noopener" style="color:#16a34a">View proof card →</a></div>';
       }
     } else {
-      resultEl.innerHTML = '<div class="hv-alert hv-alert-amber" style="margin:0"><strong>Not found.</strong> No attestation record exists for this file. The creator may not have published a proof, or you may have a modified copy.</div>';
+      // Not in registry — check if embedded HIP data points somewhere
+      if (embeddedHip && embeddedHip.content_hash && embeddedHip.content_hash !== hash) {
+        out += '<div class="hv-alert hv-alert-amber" style="margin:0"><strong>Modified file.</strong> This file contains embedded HIP proof data, but its current hash doesn\'t match the attested hash. The file may have been modified after attestation, or this is the pre-attestation version.</div>';
+      } else if (embeddedHip) {
+        out += '<div class="hv-alert hv-alert-amber" style="margin:0"><strong>Embedded proof data found</strong> but no matching registry record. The attestation may not have been published, or the registry may be temporarily unavailable.</div>';
+      } else {
+        out += '<div class="hv-alert hv-alert-amber" style="margin:0"><strong>Not found.</strong> No attestation record exists for this file. The creator may not have published a proof, or you may have a modified copy.</div>';
+      }
     }
+
+    // S42: Show embedded HIP metadata panel (if present)
+    if (embeddedHip) {
+      out += buildEmbeddedHipHTML(embeddedHip);
+    }
+
+    // S42: Show file-type-specific metadata panels
+    if (cameraInfo) out += buildCameraInfoHTML(cameraInfo);
+    if (pdfInfo) out += buildPDFInfoHTML(pdfInfo);
+    if (officeInfo) out += buildOfficeInfoHTML(officeInfo);
+    if (audioInfo) out += buildAudioInfoHTML(audioInfo);
+    if (videoInfo) out += buildVideoInfoHTML(videoInfo);
+
+    resultEl.innerHTML = out;
   } catch (ex) {
     resultEl.innerHTML = '<div class="hv-alert hv-alert-red" style="margin:0"><strong>Error:</strong> ' + (ex.message || "Could not check registry") + '</div>';
   }
@@ -629,7 +1755,8 @@ function render() {
     h += ' onclick="document.getElementById(\'hv-verify-input\').click()">';
     h += '<input type="file" id="hv-verify-input" style="display:none" onchange="hvQuickVerify(this.files[0])">';
     h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:11px;letter-spacing:1px;color:#2563eb;margin-bottom:6px">CHECK PROOF REGISTRY</div>';
-    h += '<div style="font-size:14px;color:#555">Drop any file here to check if it has been attested</div>';
+    h += '<div style="font-size:14px;color:#555">Drop any file to check attestation status</div>';
+    h += '<div style="font-size:11px;color:#999;margin-top:4px">Also extracts metadata from images, PDFs, Office docs, audio, and video files</div>';
     h += '</div>';
     h += '<div id="hv-verify-result" style="padding:0 12px 12px"></div>';
     h += '</div>';
