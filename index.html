@@ -420,6 +420,19 @@ if (returnSessionId && (state.phase !== "existing" || state.recoveryMode || stat
   try { localStorage.removeItem("hip_pending_session"); } catch(e) {}
 }
 
+// S45: Fallback — resume polling if pending session exists but no URL params came through.
+// This catches cases where Didit redirects back without ?session_id (e.g., phone redirect,
+// or user manually navigates back while verification is still processing).
+if (state.phase === "start" && !returnSessionId) {
+  var pendingFallback = null;
+  try { pendingFallback = localStorage.getItem("hip_pending_session"); } catch(e) {}
+  if (pendingFallback) {
+    state.phase = "polling";
+    state.sessionId = pendingFallback;
+    // Don't clear pending session yet — pollStatus will clear it after result
+  }
+}
+
 // S25: Check for Stripe payment return
 var paymentSuccess = urlParams.get("payment");
 if (paymentSuccess === "success" && (state.phase !== "existing" || state.recoveryMode || state.upgradeMode) && state.phase !== "polling") {
@@ -2144,6 +2157,8 @@ async function pollStatus() {
     var data = await resp.json();
 
     if (data.status === "Approved") {
+      // S45: Clear pending session — we got a result
+      try { localStorage.removeItem("hip_pending_session"); } catch(e) {}
       if (data.dedup === "exists") {
         // S33: In recovery mode, "exists" is expected — proceed to recovery
         if (state.recoveryMode) {
@@ -2185,6 +2200,7 @@ async function pollStatus() {
     }
 
     if (data.status === "Declined") {
+      try { localStorage.removeItem("hip_pending_session"); } catch(e) {}
       state.phase = "error";
       state.error = "Your identity verification was declined. Please ensure you use a valid, unexpired government ID and that your selfie matches the document photo.";
       render();
@@ -2192,23 +2208,25 @@ async function pollStatus() {
     }
 
     if (data.status === "Abandoned" || data.status === "Expired") {
+      try { localStorage.removeItem("hip_pending_session"); } catch(e) {}
       state.phase = "error";
       state.error = "Verification session " + data.status.toLowerCase() + ". Please try again.";
       render();
       return;
     }
 
-    // Still pending — poll again
-    if (state.pollCount < 60) {
+    // Still pending — poll again (S45: increased to 120 = ~6 minutes for phone-based flows)
+    if (state.pollCount < 120) {
       setTimeout(pollStatus, 3000);
     } else {
+      try { localStorage.removeItem("hip_pending_session"); } catch(e) {}
       state.phase = "error";
       state.error = "Verification is taking longer than expected. Please refresh this page to check again.";
       render();
     }
 
   } catch (ex) {
-    if (state.pollCount < 60) {
+    if (state.pollCount < 120) {
       setTimeout(pollStatus, 5000);
     } else {
       state.phase = "error";
