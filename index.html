@@ -327,7 +327,7 @@ function buildTransferUrl(cred) {
 
 // ── State ──
 var state = {
-  phase: "start",  // start | payment | verifying | polling | creating | done | error | duplicate | existing | recovery-done | upgrade-done
+  phase: "start",  // start | payment | verifying | polling | creating | done | error | duplicate | existing | recovery-done | upgrade-done | transfer | transfer-done | receive | receive-done
   sessionId: null,
   error: null,
   credential: null,
@@ -337,6 +337,9 @@ var state = {
   returnStatus: null,
   transferCode: null,
   transferKey: null,
+  receiveCode: null,    // S55: QR receive — relay code
+  receiveKey: null,     // S55: QR receive — AES key (base64url)
+  receivePollCount: 0,  // S55: QR receive — poll counter
   recoveryMode: false, // S33: credential recovery via re-verification
   upgradeMode: false, // S34: credential tier upgrade
   upgradeCredentialId: null, // S34: credential ID being upgraded
@@ -391,9 +394,33 @@ if (xferHash && xferHash.indexOf("#transfer=") === 0) {
   window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
 }
 
+// S55: Check for direct QR credential import (hash fragment: #hip-import=BASE64URL_CREDENTIAL)
+if (xferHash && xferHash.indexOf("#hip-import=") === 0) {
+  var importPayload = xferHash.substring("#hip-import=".length);
+  if (importPayload) {
+    state.phase = "qr-importing";
+    state.qrImportPayload = importPayload;
+  }
+  window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+}
+
+// S55: Check for QR receive request (hash fragment: #receive=CODE&key=KEY)
+// This is the phone-side receiver: pull encrypted credential from relay, decrypt, save
+if (xferHash && xferHash.indexOf("#receive=") === 0) {
+  var rcvParams = new URLSearchParams(xferHash.substring(1));
+  var rcvCode = rcvParams.get("receive");
+  var rcvKey = rcvParams.get("key");
+  if (rcvCode && rcvKey) {
+    state.receiveCode = rcvCode;
+    state.receiveKey = rcvKey;
+    state.phase = "receive";
+  }
+  window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+}
+
 // Check for existing credential (skip in recovery/upgrade mode — user is intentionally re-verifying)
 var existingCred = loadCredFromStorage();
-if (existingCred && existingCred.version === "hip-credential-v1" && state.phase !== "transfer" && !state.recoveryMode && !state.upgradeMode) {
+if (existingCred && existingCred.version === "hip-credential-v1" && state.phase !== "transfer" && state.phase !== "receive" && state.phase !== "qr-importing" && !state.recoveryMode && !state.upgradeMode) {
   state.phase = "existing";
 }
 
@@ -1670,7 +1697,25 @@ function render() {
     }
     var existTransferUrl = buildTransferUrl(ec);
     h += '<a href="' + existTransferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Transfer to hipprotocol.org →</a>';
+    h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:12px" onclick="showCredentialQR()">📲 Share via QR Code</button>';
+    h += '<div id="hv-qr-panel" style="display:none;margin-bottom:16px;text-align:center;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:20px;background:#fafafa">';
+    h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;letter-spacing:1px;color:#2563eb;margin-bottom:10px">SCAN TO IMPORT CREDENTIAL</div>';
+    h += '<div id="hv-qr-img" style="margin:0 auto 12px"></div>';
+    h += '<div style="font-size:12px;color:#888;line-height:1.5">Open your camera on the other device and scan this code.<br>Your credential will be imported automatically.</div>';
+    h += '<div style="font-size:11px;color:#b91c1c;margin-top:8px;line-height:1.4">⚠ This QR code contains your private key. Only show it to your own devices.</div>';
+    h += '<div style="margin-top:10px"><a href="#" onclick="hideCredentialQR();return false" style="font-size:12px;color:#888">Hide QR Code</a></div>';
+    h += '</div>';
     h += '<button class="hv-btn hv-btn-outline" onclick="downloadBackup()">↓ Download Backup Copy</button>';
+
+    // S55: Delete credential from this browser (local-only, does not affect server records)
+    h += '<div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(0,0,0,0.06)">';
+    h += '<div id="hv-delete-idle"><a href="#" onclick="confirmDeleteCredential();return false" style="font-size:12px;color:#999;text-decoration:underline">Remove credential from this browser</a></div>';
+    h += '<div id="hv-delete-confirm" style="display:none;text-align:center">';
+    h += '<div style="font-size:13px;color:#b91c1c;margin-bottom:12px;line-height:1.5">Are you sure? This removes the credential from <strong>this browser only</strong>. Your server records and deduplication hash are not affected. You can re-import via backup file or QR code.</div>';
+    h += '<button class="hv-btn" style="background:#dc2626;margin-bottom:8px;font-size:13px" onclick="deleteLocalCredential()">Yes, Remove It</button>';
+    h += '<div><a href="#" onclick="cancelDeleteCredential();return false" style="font-size:12px;color:#888">Cancel</a></div>';
+    h += '</div>';
+    h += '</div>';
 
   } else if (state.phase === "start") {
     // ── Hero ──
@@ -1825,6 +1870,7 @@ function render() {
     h += '<div class="hv-step"><div class="hv-step-dot hv-dot-active">2</div><div><div class="hv-step-title">Processing verification…</div><div class="hv-step-text">Your identity documents are being verified. Poll attempt ' + state.pollCount + '.</div></div></div>';
     h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">3</div><div><div class="hv-step-title">Credential creation</div><div class="hv-step-text">Waiting for verification result.</div></div></div>';
     h += '</div>';
+    h += '<div style="margin-top:16px;text-align:center"><a href="#" onclick="abortPolling();return false" style="font-size:13px;color:#888;text-decoration:underline">Not working? Cancel and start over</a></div>';
 
   } else if (state.phase === "creating") {
     h += '<div class="hv-badge">● Step 3 of 3</div>';
@@ -1848,6 +1894,14 @@ function render() {
     h += '</div>';
     h += '<a href="' + transferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Transfer to hipprotocol.org → Start Attesting</a>';
     h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:12px" onclick="downloadBackup()">↓ Download Backup Copy</button>';
+    h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:12px" onclick="showCredentialQR()">📲 Share via QR Code</button>';
+    h += '<div id="hv-qr-panel" style="display:none;margin-bottom:16px;text-align:center;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:20px;background:#fafafa">';
+    h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;letter-spacing:1px;color:#2563eb;margin-bottom:10px">SCAN TO IMPORT CREDENTIAL</div>';
+    h += '<div id="hv-qr-img" style="margin:0 auto 12px"></div>';
+    h += '<div style="font-size:12px;color:#888;line-height:1.5">Open your camera on the other device and scan this code.<br>Your credential will be imported automatically.</div>';
+    h += '<div style="font-size:11px;color:#b91c1c;margin-top:8px;line-height:1.4">⚠ This QR code contains your private key. Only show it to your own devices.</div>';
+    h += '<div style="margin-top:10px"><a href="#" onclick="hideCredentialQR();return false" style="font-size:12px;color:#888">Hide QR Code</a></div>';
+    h += '</div>';
     h += '<div class="hv-alert hv-alert-amber"><strong>Keep your backup.</strong> Your credential is also saved in this browser, but if you clear site data, switch browsers, or use a different device, you\'ll need the backup file to restore it.</div>';
 
   } else if (state.phase === "recovery-done") {
@@ -1944,6 +1998,52 @@ function render() {
     h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your credential has been securely transferred. It should appear on the other device within a few seconds.</p>';
     h += '<div class="hv-alert hv-alert-green">✓ <strong>Transfer complete.</strong> The encrypted relay data has been deleted from the server.</div>';
     h += '<a href="https://hipprotocol.org" class="hv-btn hv-btn-outline" style="text-decoration:none;margin-top:12px">← Return to hipprotocol.org</a>';
+
+  } else if (state.phase === "receive") {
+    h += '<div class="hv-badge" style="border-color:rgba(37,99,235,0.3);color:#2563eb">↙ Receiving</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Receiving credential</h1>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px"><span class="hv-spinner"></span>Downloading your encrypted credential from the secure relay…</p>';
+    h += '<div id="rcv-status" style="font-size:14px;color:#555;text-align:center;margin-bottom:16px">Poll attempt ' + state.receivePollCount + '</div>';
+    h += '<div class="hv-alert hv-alert-blue"><strong>Secure transfer:</strong> Your credential is encrypted end-to-end. The relay server only sees ciphertext it cannot read.</div>';
+    h += '<div style="margin-top:16px;text-align:center"><a href="#" onclick="abortReceive();return false" style="font-size:13px;color:#888;text-decoration:underline">Cancel</a></div>';
+
+  } else if (state.phase === "receive-done") {
+    var rc = loadCredFromStorage();
+    var rcTn = rc ? (rc.tier === 1 ? "Tier 1 — Government ID" : rc.tier === 2 ? "Tier 2 — Peer Vouch" : rc.tier === 3 ? "Tier 3 — Device Biometric" : "Credential") : "Credential";
+    h += '<div class="hv-badge" style="border-color:rgba(22,163,74,0.3);color:#16a34a">✓ Received</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Credential saved to this device</h1>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your credential has been securely transferred and saved to this browser.</p>';
+    h += '<div class="hv-alert hv-alert-green">✓ <strong>Transfer complete.</strong> The encrypted relay data has been deleted from the server.</div>';
+    if (rc) {
+      h += '<div class="hv-result" style="margin-top:16px">';
+      h += '<div class="hv-result-row"><span class="hv-result-label">Tier</span><span class="hv-result-val">' + rcTn + '</span></div>';
+      h += '<div class="hv-result-row"><span class="hv-result-label">Credential ID</span><span class="hv-result-val" style="font-size:11px;word-break:break-all">' + rc.credentialId + '</span></div>';
+      h += '</div>';
+    }
+    h += '<a href="https://hipprotocol.org" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-top:16px;margin-bottom:12px">Go to hipprotocol.org →</a>';
+    h += '<a href="https://hipkit.net/app.html" class="hv-btn hv-btn-outline" style="text-decoration:none">Open HIPKit →</a>';
+
+  } else if (state.phase === "qr-importing") {
+    h += '<div class="hv-badge" style="border-color:rgba(37,99,235,0.3);color:#2563eb">↙ QR Import</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Importing credential…</h1>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px"><span class="hv-spinner"></span>Decoding and validating your credential from the QR code.</p>';
+    h += '<div id="qr-import-status"></div>';
+
+  } else if (state.phase === "qr-import-done") {
+    var qic = loadCredFromStorage();
+    var qicTn = qic ? (qic.tier === 1 ? "Tier 1 — Government ID" : qic.tier === 2 ? "Tier 2 — Peer Vouch" : qic.tier === 3 ? "Tier 3 — Device Biometric" : "Credential") : "Credential";
+    h += '<div class="hv-badge" style="border-color:rgba(22,163,74,0.3);color:#16a34a">✓ Imported</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Credential imported</h1>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your credential has been imported from the QR code and saved to this browser.</p>';
+    h += '<div class="hv-alert hv-alert-green">✓ <strong>Import complete.</strong> This device now has the same credential as your source device.</div>';
+    if (qic) {
+      h += '<div class="hv-result" style="margin-top:16px">';
+      h += '<div class="hv-result-row"><span class="hv-result-label">Tier</span><span class="hv-result-val">' + qicTn + '</span></div>';
+      h += '<div class="hv-result-row"><span class="hv-result-label">Credential ID</span><span class="hv-result-val" style="font-size:11px;word-break:break-all">' + qic.credentialId + '</span></div>';
+      h += '</div>';
+    }
+    h += '<a href="https://hipprotocol.org" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-top:16px;margin-bottom:12px">Go to hipprotocol.org →</a>';
+    h += '<a href="https://hipkit.net/app.html" class="hv-btn hv-btn-outline" style="text-decoration:none">Open HIPKit →</a>';
 
   } else if (state.phase === "terms") {
     h += '<div class="hv-legal">';
@@ -2432,6 +2532,122 @@ function downloadBackup() {
   URL.revokeObjectURL(url);
 }
 
+// S55: Build a self-contained import URL encoding the credential in the hash fragment
+function buildQRImportUrl(cred) {
+  var obj = Object.assign({}, cred);
+  delete obj._priv;
+  delete obj._pub;
+  var json = JSON.stringify(obj);
+  var bytes = new TextEncoder().encode(json);
+  var binary = ""; for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  var encoded = btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return "https://hipverify.org#hip-import=" + encoded;
+}
+
+// S55: Show QR code for credential transfer
+function showCredentialQR() {
+  var cred = existingCred || state.credential;
+  if (!cred) return;
+  var qrUrl = buildQRImportUrl(cred);
+  var panel = document.getElementById("hv-qr-panel");
+  var imgDiv = document.getElementById("hv-qr-img");
+  if (!panel || !imgDiv) return;
+  var qrImgSrc = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=" + encodeURIComponent(qrUrl) + "&color=1a1a1a&bgcolor=FFFFFF&margin=10";
+  imgDiv.innerHTML = '<img src="' + qrImgSrc + '" alt="Credential QR Code" style="width:260px;height:260px;border-radius:8px;border:2px solid #e5e5e5">';
+  panel.style.display = "block";
+}
+
+function hideCredentialQR() {
+  var panel = document.getElementById("hv-qr-panel");
+  if (panel) panel.style.display = "none";
+}
+
+// S55: Delete credential from this browser (local-only)
+function confirmDeleteCredential() {
+  var idle = document.getElementById("hv-delete-idle");
+  var confirm = document.getElementById("hv-delete-confirm");
+  if (idle) idle.style.display = "none";
+  if (confirm) confirm.style.display = "block";
+}
+
+function cancelDeleteCredential() {
+  var idle = document.getElementById("hv-delete-idle");
+  var confirm = document.getElementById("hv-delete-confirm");
+  if (idle) idle.style.display = "block";
+  if (confirm) confirm.style.display = "none";
+}
+
+function deleteLocalCredential() {
+  try { localStorage.removeItem(HIP_CRED_KEY); } catch(e) {}
+  try { localStorage.removeItem("hip_pending_session"); } catch(e) {}
+  existingCred = null;
+  state.phase = "start";
+  state.credential = null;
+  render();
+}
+
+// S55: Process a #hip-import= payload — decode, validate, save credential
+async function processQRImport() {
+  var statusEl = document.getElementById("qr-import-status");
+  try {
+    var payload = state.qrImportPayload;
+    if (!payload) throw new Error("No import payload found.");
+
+    // Base64url decode
+    var b64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4 !== 0) b64 += "=";
+    var binary = atob(b64);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    var json = new TextDecoder().decode(bytes);
+    var credObj = JSON.parse(json);
+
+    // Validate
+    if (!credObj || credObj.version !== "hip-credential-v1" || !credObj.credentialId || !credObj.publicKey || !credObj.privateKey) {
+      throw new Error("Invalid credential data. Expected a HIP credential (version hip-credential-v1).");
+    }
+
+    // Verify credential_id = SHA-256(publicKey)
+    var pubBytes = new Uint8Array(credObj.publicKey.match(/.{2}/g).map(function(b) { return parseInt(b, 16); }));
+    var hashBuf = await crypto.subtle.digest("SHA-256", pubBytes);
+    var computedId = Array.from(new Uint8Array(hashBuf)).map(function(b) { return b.toString(16).padStart(2, "0"); }).join("");
+    if (computedId !== credObj.credentialId) {
+      throw new Error("Credential integrity check failed: credential ID does not match public key.");
+    }
+
+    // Check for existing credential — warn if overwriting a different one
+    var existing = loadCredFromStorage();
+    if (existing && existing.credentialId !== credObj.credentialId) {
+      // Different credential exists — overwrite (same human, different device)
+      // This is expected behavior for cross-device transfer
+    }
+
+    // Save
+    saveCredToStorage(credObj);
+    existingCred = credObj;
+
+    if (statusEl) statusEl.innerHTML = '<div class="hv-alert hv-alert-green">✓ <strong>Credential validated and saved.</strong></div>';
+
+    state.phase = "qr-import-done";
+    render();
+
+  } catch (ex) {
+    if (statusEl) {
+      statusEl.innerHTML = '<div class="hv-alert hv-alert-red"><strong>Import failed:</strong> ' + (ex.message || "Could not decode credential.") + '</div>';
+    }
+    // Also offer a way back
+    setTimeout(function() {
+      state.phase = "start";
+      var ec = loadCredFromStorage();
+      if (ec && ec.version === "hip-credential-v1") {
+        existingCred = ec;
+        state.phase = "existing";
+      }
+      render();
+    }, 5000);
+  }
+}
+
 function resetFlow() {
   state.phase = "start";
   state.sessionId = null;
@@ -2445,6 +2661,30 @@ function resetFlow() {
   try { localStorage.removeItem("hip_recovery_mode"); } catch(e) {}
   try { localStorage.removeItem("hip_upgrade_mode"); } catch(e) {}
   try { localStorage.removeItem("hip_upgrade_cred_id"); } catch(e) {}
+  try { localStorage.removeItem("hip_pending_session"); } catch(e) {}
+  window.history.replaceState({}, document.title, window.location.pathname);
+  // Check if there's an existing credential — go to "existing" phase instead of "start"
+  var ec = loadCredFromStorage();
+  if (ec && ec.version === "hip-credential-v1") {
+    existingCred = ec;
+    state.phase = "existing";
+  }
+  render();
+}
+
+// S55: Abort a stuck polling loop and return to appropriate home state
+function abortPolling() {
+  try { localStorage.removeItem("hip_pending_session"); } catch(e) {}
+  state.sessionId = null;
+  state.pollCount = 0;
+  var ec = loadCredFromStorage();
+  if (ec && ec.version === "hip-credential-v1") {
+    existingCred = ec;
+    state.phase = "existing";
+  } else {
+    state.phase = "start";
+  }
+  state.error = null;
   window.history.replaceState({}, document.title, window.location.pathname);
   render();
 }
@@ -2540,10 +2780,104 @@ async function doTransfer() {
   }
 }
 
+// S55: QR Receive — pull encrypted credential from relay, decrypt, save
+async function pollReceive() {
+  if (state.phase !== "receive" || !state.receiveCode) return;
+
+  state.receivePollCount++;
+  var statusEl = document.getElementById("rcv-status");
+  if (statusEl) statusEl.textContent = "Poll attempt " + state.receivePollCount;
+
+  try {
+    var resp = await fetch(WORKER_URL + "/transfer/" + state.receiveCode);
+    var data = await resp.json();
+
+    if (data.status === "ready" && data.encrypted) {
+      if (statusEl) statusEl.innerHTML = '<span style="color:#16a34a">✓ Credential received — decrypting…</span>';
+
+      // Decode the AES key from base64url
+      var keyB64 = state.receiveKey.replace(/-/g, "+").replace(/_/g, "/");
+      while (keyB64.length % 4 !== 0) keyB64 += "=";
+      var keyBytes = Uint8Array.from(atob(keyB64), function(c) { return c.charCodeAt(0); });
+
+      var aesKey = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["decrypt"]);
+
+      // Decode the encrypted payload: first 12 bytes = IV, rest = ciphertext
+      var raw = atob(data.encrypted);
+      var packed = new Uint8Array(raw.length);
+      for (var i = 0; i < raw.length; i++) packed[i] = raw.charCodeAt(i);
+
+      var iv = packed.slice(0, 12);
+      var ciphertext = packed.slice(12);
+
+      var plainBuf = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: iv },
+        aesKey,
+        ciphertext
+      );
+
+      var json = new TextDecoder().decode(plainBuf);
+      var credObj = JSON.parse(json);
+
+      // Validate credential
+      if (!credObj || credObj.version !== "hip-credential-v1" || !credObj.credentialId || !credObj.publicKey || !credObj.privateKey) {
+        throw new Error("Invalid credential received.");
+      }
+
+      // Save to localStorage
+      try { localStorage.setItem("hip_credential_v1", JSON.stringify(credObj)); } catch(e) {}
+
+      state.phase = "receive-done";
+      render();
+      return;
+    }
+
+    // Still waiting — poll again
+    if (state.receivePollCount < 150) {
+      setTimeout(pollReceive, 2000);
+    } else {
+      state.phase = "error";
+      state.error = "Transfer timed out. The QR code may have expired. Please try again from HIPKit.";
+      render();
+    }
+
+  } catch (ex) {
+    if (state.receivePollCount < 150) {
+      setTimeout(pollReceive, 3000);
+    } else {
+      state.phase = "error";
+      state.error = "Failed to receive credential: " + ex.message;
+      render();
+    }
+  }
+}
+
+function abortReceive() {
+  state.receiveCode = null;
+  state.receiveKey = null;
+  state.receivePollCount = 0;
+  var ec = loadCredFromStorage();
+  if (ec && ec.version === "hip-credential-v1") {
+    existingCred = ec;
+    state.phase = "existing";
+  } else {
+    state.phase = "start";
+  }
+  render();
+}
+
 // ── Init ──
 render();
 if (state.phase === "polling") {
   setTimeout(pollStatus, 1000);
+}
+// S55: Auto-start receive polling
+if (state.phase === "receive") {
+  setTimeout(pollReceive, 500);
+}
+// S55: Auto-process QR import
+if (state.phase === "qr-importing") {
+  setTimeout(processQRImport, 300);
 }
 // S25: Auto-start Didit verification after Stripe payment return
 if (state.phase === "verifying") {
