@@ -1696,12 +1696,15 @@ function render() {
       h += '<div class="hv-alert hv-alert-green"><strong>Want to upgrade to Tier 1?</strong> You can upgrade your existing credential without losing your trust history. <a href="?mode=upgrade&cred=' + encodeURIComponent(ec.credentialId) + '" style="color:#16a34a;font-weight:600">Start Tier 1 Upgrade →</a></div>';
     }
     var existTransferUrl = buildTransferUrl(ec);
+    var existHipkitUrl = buildQRImportUrl(ec);
     h += '<a href="' + existTransferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Transfer to hipprotocol.org →</a>';
-    h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:12px" onclick="showCredentialQR()">📲 Share via QR Code</button>';
+    h += '<a href="' + existHipkitUrl.replace("https://hipverify.org#hip-import=", "https://hipkit.net/app.html#hip-import=") + '" class="hv-btn hv-btn-outline" style="text-decoration:none;margin-bottom:12px">Transfer to HIPKit →</a>';
+    h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:4px" onclick="showCredentialQR()">📲 Share via QR Code</button>';
+    h += '<div style="font-size:11px;color:#999;margin-bottom:12px;text-align:center">Transfer your credential to your other devices</div>';
     h += '<div id="hv-qr-panel" style="display:none;margin-bottom:16px;text-align:center;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:20px;background:#fafafa">';
-    h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;letter-spacing:1px;color:#2563eb;margin-bottom:10px">SCAN TO IMPORT CREDENTIAL</div>';
+    h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;letter-spacing:1px;color:#2563eb;margin-bottom:10px">EXPORT CREDENTIAL TO ANOTHER DEVICE</div>';
     h += '<div id="hv-qr-img" style="margin:0 auto 12px"></div>';
-    h += '<div style="font-size:12px;color:#888;line-height:1.5">Open your camera on the other device and scan this code.<br>Your credential will be imported automatically.</div>';
+    h += '<div style="font-size:12px;color:#888;line-height:1.5">Scan this QR code with the device that needs this credential.<br>It will be loaded automatically.</div>';
     h += '<div style="font-size:11px;color:#b91c1c;margin-top:8px;line-height:1.4">⚠ This QR code contains your private key. Only show it to your own devices.</div>';
     h += '<div style="margin-top:10px"><a href="#" onclick="hideCredentialQR();return false" style="font-size:12px;color:#888">Hide QR Code</a></div>';
     h += '</div>';
@@ -1896,9 +1899,9 @@ function render() {
     h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:12px" onclick="downloadBackup()">↓ Download Backup Copy</button>';
     h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:12px" onclick="showCredentialQR()">📲 Share via QR Code</button>';
     h += '<div id="hv-qr-panel" style="display:none;margin-bottom:16px;text-align:center;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:20px;background:#fafafa">';
-    h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;letter-spacing:1px;color:#2563eb;margin-bottom:10px">SCAN TO IMPORT CREDENTIAL</div>';
+    h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;letter-spacing:1px;color:#2563eb;margin-bottom:10px">EXPORT CREDENTIAL TO ANOTHER DEVICE</div>';
     h += '<div id="hv-qr-img" style="margin:0 auto 12px"></div>';
-    h += '<div style="font-size:12px;color:#888;line-height:1.5">Open your camera on the other device and scan this code.<br>Your credential will be imported automatically.</div>';
+    h += '<div style="font-size:12px;color:#888;line-height:1.5">Scan this QR code with the device that needs this credential.<br>It will be loaded automatically.</div>';
     h += '<div style="font-size:11px;color:#b91c1c;margin-top:8px;line-height:1.4">⚠ This QR code contains your private key. Only show it to your own devices.</div>';
     h += '<div style="margin-top:10px"><a href="#" onclick="hideCredentialQR();return false" style="font-size:12px;color:#888">Hide QR Code</a></div>';
     h += '</div>';
@@ -2024,26 +2027,30 @@ function render() {
     h += '<a href="https://hipkit.net/app.html" class="hv-btn hv-btn-outline" style="text-decoration:none">Open HIPKit →</a>';
 
   } else if (state.phase === "qr-importing") {
-    h += '<div class="hv-badge" style="border-color:rgba(37,99,235,0.3);color:#2563eb">↙ QR Import</div>';
-    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Importing credential…</h1>';
-    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px"><span class="hv-spinner"></span>Decoding and validating your credential from the QR code.</p>';
+    h += '<div class="hv-badge" style="border-color:rgba(37,99,235,0.3);color:#2563eb">↙ Receiving</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Loading credential…</h1>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px"><span class="hv-spinner"></span>Decoding and validating your credential.</p>';
     h += '<div id="qr-import-status"></div>';
 
   } else if (state.phase === "qr-import-done") {
     var qic = loadCredFromStorage();
     var qicTn = qic ? (qic.tier === 1 ? "Tier 1 — Government ID" : qic.tier === 2 ? "Tier 2 — Peer Vouch" : qic.tier === 3 ? "Tier 3 — Device Biometric" : "Credential") : "Credential";
-    h += '<div class="hv-badge" style="border-color:rgba(22,163,74,0.3);color:#16a34a">✓ Imported</div>';
-    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Credential imported</h1>';
-    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your credential has been imported from the QR code and saved to this browser.</p>';
-    h += '<div class="hv-alert hv-alert-green">✓ <strong>Import complete.</strong> This device now has the same credential as your source device.</div>';
+    var qicTransferUrl = qic ? buildTransferUrl(qic) : "https://hipprotocol.org";
+    var qicHipkitUrl = qic ? buildQRImportUrl(qic).replace("https://hipverify.org#hip-import=", "https://hipkit.net/app.html#hip-import=") : "https://hipkit.net/app.html";
+    h += '<div class="hv-badge" style="border-color:rgba(22,163,74,0.3);color:#16a34a">✓ Credential Loaded</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Credential ready on this device</h1>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your credential has been saved to this browser. Choose where to use it:</p>';
+    h += '<div class="hv-alert hv-alert-green">✓ <strong>Loaded successfully.</strong> This device now has the same credential as your source device. All attestations will be under the same identity.</div>';
     if (qic) {
       h += '<div class="hv-result" style="margin-top:16px">';
       h += '<div class="hv-result-row"><span class="hv-result-label">Tier</span><span class="hv-result-val">' + qicTn + '</span></div>';
       h += '<div class="hv-result-row"><span class="hv-result-label">Credential ID</span><span class="hv-result-val" style="font-size:11px;word-break:break-all">' + qic.credentialId + '</span></div>';
       h += '</div>';
     }
-    h += '<a href="https://hipprotocol.org" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-top:16px;margin-bottom:12px">Go to hipprotocol.org →</a>';
-    h += '<a href="https://hipkit.net/app.html" class="hv-btn hv-btn-outline" style="text-decoration:none">Open HIPKit →</a>';
+    h += '<div style="font-size:13px;color:#555;font-weight:600;margin-top:20px;margin-bottom:12px">Use this credential on:</div>';
+    h += '<a href="' + qicTransferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">hipprotocol.org — Attestation Tool →</a>';
+    h += '<a href="' + qicHipkitUrl + '" class="hv-btn hv-btn-outline" style="text-decoration:none;margin-bottom:12px">HIPKit — Professional Tools →</a>';
+    h += '<button class="hv-btn hv-btn-outline" onclick="goHome()" style="margin-bottom:12px">Stay on HIP Verify</button>';
 
   } else if (state.phase === "terms") {
     h += '<div class="hv-legal">';
