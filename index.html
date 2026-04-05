@@ -1697,8 +1697,8 @@ function render() {
     }
     var existTransferUrl = buildTransferUrl(ec);
     var existHipkitUrl = buildQRImportUrl(ec);
-    h += '<a href="' + existTransferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Transfer to hipprotocol.org →</a>';
-    h += '<a href="' + existHipkitUrl.replace("https://hipverify.org#hip-import=", "https://hipkit.net/app.html#hip-import=") + '" class="hv-btn hv-btn-outline" style="text-decoration:none;margin-bottom:12px">Transfer to HIPKit →</a>';
+    h += '<a href="' + existHipkitUrl.replace("https://hipverify.org#hip-import=", "https://hipkit.net/app.html#hip-import=") + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Open HIPKit →</a>';
+    h += '<a href="' + existTransferUrl + '" class="hv-btn hv-btn-outline" style="text-decoration:none;margin-bottom:12px">Open hipprotocol.org →</a>';
     h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:4px" onclick="showCredentialQR()">📲 Share via QR Code</button>';
     h += '<div style="font-size:11px;color:#999;margin-bottom:12px;text-align:center">Transfer your credential to your other devices</div>';
     h += '<div id="hv-qr-panel" style="display:none;margin-bottom:16px;text-align:center;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:20px;background:#fafafa">';
@@ -1765,7 +1765,7 @@ function render() {
       h += '<div class="hv-card">';
       h += '<div class="hv-step"><div class="hv-step-dot hv-dot-active">1</div><div><div class="hv-step-title">Pay verification fee</div><div class="hv-step-text">A one-time fee of <strong style="color:#1a1a1a">$1.00</strong> covers identity verification processing via Stripe. <a href="#about-fee" onclick="var el=document.getElementById(\'about-fee\');if(el){var y=el.getBoundingClientRect().top+window.pageYOffset-70;window.scrollTo({top:y,behavior:\'smooth\'});}return false;" style="font-size:12px">Why does this cost money?*</a></div></div></div>';
       h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">2</div><div><div class="hv-step-title">Verify your identity</div><div class="hv-step-text">Scan your government ID and take a selfie for liveness detection through our verification partner.</div></div></div>';
-      h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">3</div><div><div class="hv-step-title">Credential issued</div><div class="hv-step-text">Your Tier 1 credential is created in your browser and transferred to hipprotocol.org in one click.</div></div></div>';
+      h += '<div class="hv-step"><div class="hv-step-dot hv-dot-pending">3</div><div><div class="hv-step-title">Credential issued</div><div class="hv-step-text">Your Tier 1 credential is created in your browser and transferred to HIPKit in one click.</div></div></div>';
       h += '</div>';
     }
 
@@ -1885,8 +1885,8 @@ function render() {
     var transferUrl = buildTransferUrl(c);
     h += '<div class="hv-badge" style="border-color:rgba(22,163,74,0.3);color:#16a34a">✓ Tier 1 Verified</div>';
     h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Your Tier 1 credential is ready</h1>';
-    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your identity has been verified and your credential is saved in this browser. Click below to transfer it to hipprotocol.org and start attesting.</p>';
-    h += '<div class="hv-alert hv-alert-green">✓ <strong>Credential created successfully.</strong> It will be transferred automatically when you click the button below.</div>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your identity has been verified and your credential is saved in this browser. Open HIPKit to start attesting your work.</p>';
+    h += '<div class="hv-alert hv-alert-green">✓ <strong>Credential created successfully.</strong> Click below to open HIPKit — your credential will transfer automatically.</div>';
     h += '<div class="hv-result">';
     h += '<div class="hv-result-row"><span class="hv-result-label">Tier</span><span class="hv-result-val">Tier 1 — Government ID</span></div>';
     h += '<div class="hv-result-row"><span class="hv-result-label">Credential ID</span><span class="hv-result-val">' + c.credentialId + '</span></div>';
@@ -1895,7 +1895,9 @@ function render() {
     h += '<div class="hv-result-row"><span class="hv-result-label">Created</span><span class="hv-result-val">' + new Date(c.created).toLocaleString() + '</span></div>';
     h += '<div class="hv-result-row"><span class="hv-result-label">Issued By</span><span class="hv-result-val">' + (c.issuedBy || "hipverify.org") + '</span></div>';
     h += '</div>';
-    h += '<a href="' + transferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Transfer to hipprotocol.org → Start Attesting</a>';
+    var hipkitTransferUrl = buildQRImportUrl(c).replace("https://hipverify.org#hip-import=", "https://hipkit.net/app.html#hip-import=");
+    h += '<a href="' + hipkitTransferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Open HIPKit → Start Attesting</a>';
+    h += '<a href="' + transferUrl + '" class="hv-btn hv-btn-outline" style="text-decoration:none;margin-bottom:12px">Open hipprotocol.org instead</a>';
     h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:12px" onclick="downloadBackup()">↓ Download Backup Copy</button>';
     h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:12px" onclick="showCredentialQR()">📲 Share via QR Code</button>';
     h += '<div id="hv-qr-panel" style="display:none;margin-bottom:16px;text-align:center;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:20px;background:#fafafa">';
@@ -1905,7 +1907,7 @@ function render() {
     h += '<div style="font-size:11px;color:#b91c1c;margin-top:8px;line-height:1.4">⚠ This QR code contains your private key. Only show it to your own devices.</div>';
     h += '<div style="margin-top:10px"><a href="#" onclick="hideCredentialQR();return false" style="font-size:12px;color:#888">Hide QR Code</a></div>';
     h += '</div>';
-    h += '<div class="hv-alert hv-alert-amber"><strong>Keep your backup.</strong> Your credential is also saved in this browser, but if you clear site data, switch browsers, or use a different device, you\'ll need the backup file to restore it.</div>';
+    h += '<div class="hv-alert hv-alert-amber"><strong>Recommended: download a backup.</strong> Your credential will transfer to HIPKit automatically, but keeping a backup file means you can restore it if you ever clear your browser data or switch devices.</div>';
 
   } else if (state.phase === "recovery-done") {
     // S33: Successful credential recovery
