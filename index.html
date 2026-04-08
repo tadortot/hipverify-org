@@ -1697,8 +1697,9 @@ function render() {
     }
     var existTransferUrl = buildTransferUrl(ec);
     var existHipkitUrl = buildQRImportUrl(ec);
-    h += '<a href="' + existHipkitUrl.replace("https://hipverify.org#hip-import=", "https://hipkit.net/app.html#hip-import=") + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Open HIPKit →</a>';
-    h += '<a href="' + existTransferUrl + '" class="hv-btn hv-btn-outline" style="text-decoration:none;margin-bottom:12px">Open hipprotocol.org →</a>';
+    h += '<div style="font-size:13px;color:#555;font-weight:600;margin-top:16px;margin-bottom:10px">Sync this credential to other HIP sites:</div>';
+    h += '<a href="' + existHipkitUrl.replace("https://hipverify.org#hip-import=", "https://hipkit.net/app.html#hip-import=") + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">🔗 Open HIPKit with this credential →</a>';
+    h += '<a href="' + existTransferUrl + '" class="hv-btn hv-btn-outline" style="text-decoration:none;margin-bottom:12px">🔗 Open hipprotocol.org with this credential →</a>';
     h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:4px" onclick="showCredentialQR()">📲 Share via QR Code</button>';
     h += '<div style="font-size:11px;color:#999;margin-bottom:12px;text-align:center">Transfer your credential to your other devices</div>';
     h += '<div id="hv-qr-panel" style="display:none;margin-bottom:16px;text-align:center;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:20px;background:#fafafa">';
@@ -1786,13 +1787,13 @@ function render() {
 
     h += '<a href="https://hipprotocol.org#tier3" target="_blank" rel="noopener" class="hv-lane" style="display:block;text-decoration:none;color:inherit">';
     h += '<div class="hv-lane-header"><div class="hv-lane-dot" style="background:#16a34a"></div><div class="hv-lane-title">Tier 3 — Device Biometric <span style="font-size:11px;font-weight:400;color:#16a34a">↗ hipprotocol.org</span></div></div>';
-    h += '<div class="hv-lane-text">Try HIP at no cost. Use Face ID, Touch ID, or Windows Hello to create a credential instantly. Lower starting trust score, but full access to attestation and verification. You can upgrade to Tier 1 anytime — your trust history is preserved.</div>';
-    h += '<div class="hv-lane-tag" style="background:rgba(22,163,74,0.06);color:#16a34a">No Cost · Instant · Upgradeable</div>';
+    h += '<div class="hv-lane-text">Try HIP at no cost. Use Face ID, Touch ID, or Windows Hello to create a trial credential instantly. Limited to 50 attestations with a trust score capped at 20. You can upgrade to Tier 1 anytime — your trust history is preserved.</div>';
+    h += '<div class="hv-lane-tag" style="background:rgba(22,163,74,0.06);color:#16a34a">No Cost · Trial Tier · 50 Attestation Limit</div>';
     h += '</a>';
 
     h += '<a href="https://hipprotocol.org#tier2" target="_blank" rel="noopener" class="hv-lane" style="display:block;text-decoration:none;color:inherit">';
     h += '<div class="hv-lane-header"><div class="hv-lane-dot" style="background:#d97706"></div><div class="hv-lane-title">Tier 2 — Peer Vouch <span style="font-size:11px;font-weight:400;color:#d97706">↗ hipprotocol.org</span></div></div>';
-    h += '<div class="hv-lane-text">A Tier 1 credential holder vouches for you on hipprotocol.org. No fee, no ID scan — just a cryptographic endorsement from someone already in the network.</div>';
+    h += '<div class="hv-lane-text">A Tier 1 credential holder vouches for you on hipprotocol.org. No fee, no ID scan — just a cryptographic endorsement from someone already in the network. Each voucher is limited to 1 vouch per month.</div>';
     h += '<div class="hv-lane-tag" style="background:rgba(217,119,6,0.06);color:#d97706">No Cost · Requires Voucher</div>';
     h += '</a>';
 
@@ -1816,6 +1817,7 @@ function render() {
     h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px"><strong style="color:#1a1a1a">What we verify:</strong> That you are a living human with a valid government-issued ID. We confirm your identity through document scanning and a live selfie.</div>';
     h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px"><strong style="color:#1a1a1a">What we store:</strong> Nothing identifiable. After verification, only a one-way deduplication hash is retained — computed from your document number, date of birth, and issuing state, then HMAC-hashed with a server-side secret. This hash cannot be reversed to recover your identity. It exists solely to prevent the same person from creating multiple credentials.</div>';
     h += '<div style="font-size:14px;color:#555;line-height:1.75"><strong style="color:#1a1a1a">What you get:</strong> A cryptographic key pair generated entirely in your browser. The private key never leaves your device. Your credential is saved to localStorage and auto-loads on hipprotocol.org. You can download a backup file for safekeeping.</div>';
+    h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-top:14px;padding-top:14px;border-top:1px solid rgba(0,0,0,0.06)"><strong style="color:#1a1a1a">Anti-abuse measures:</strong> Government ID dedup prevents duplicate Tier 1 credentials. Tier 2 vouches are capped at 1 per voucher per month. Tier 3 trial credentials are limited to 50 attestations with a trust score ceiling of 20. Superseded credentials (from recovery or upgrade) are blocked from attestation server-side. All trust scores are computed server-side from objective factors and cannot be inflated by the client.</div>';
     h += '</div>';
 
     // ── About the fee ──
@@ -2049,10 +2051,34 @@ function render() {
       h += '<div class="hv-result-row"><span class="hv-result-label">Credential ID</span><span class="hv-result-val" style="font-size:11px;word-break:break-all">' + qic.credentialId + '</span></div>';
       h += '</div>';
     }
-    h += '<div style="font-size:13px;color:#555;font-weight:600;margin-top:20px;margin-bottom:12px">Use this credential on:</div>';
-    h += '<a href="' + qicTransferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">hipprotocol.org — Attestation Tool →</a>';
-    h += '<a href="' + qicHipkitUrl + '" class="hv-btn hv-btn-outline" style="text-decoration:none;margin-bottom:12px">HIPKit — Professional Tools →</a>';
+    h += '<div style="font-size:13px;color:#555;font-weight:600;margin-top:20px;margin-bottom:12px">Sync this credential to other HIP sites:</div>';
+    h += '<a href="' + qicTransferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Open hipprotocol.org with this credential →</a>';
+    h += '<a href="' + qicHipkitUrl + '" class="hv-btn hv-btn-outline" style="text-decoration:none;margin-bottom:12px">Open HIPKit with this credential →</a>';
     h += '<button class="hv-btn hv-btn-outline" onclick="goHome()" style="margin-bottom:12px">Stay on HIP Verify</button>';
+
+  // S64: Credential conflict resolution
+  } else if (state.phase === "qr-import-conflict") {
+    var inc = state.qrImportIncoming;
+    var ext = state.qrImportExisting;
+    var incTn = inc ? (inc.tier === 1 ? "Tier 1" : inc.tier === 2 ? "Tier 2" : "Tier 3") : "";
+    var extTn = ext ? (ext.tier === 1 ? "Tier 1" : ext.tier === 2 ? "Tier 2" : "Tier 3") : "";
+    h += '<div class="hv-badge" style="border-color:rgba(220,38,38,0.3);color:#dc2626">⚠ Conflict</div>';
+    h += '<h1 class="hv-serif" style="font-size:clamp(24px,5vw,36px);font-weight:400;margin-bottom:12px">Different credential detected</h1>';
+    h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:20px">This browser already has a different credential. Replacing it will disconnect you from the current credential\'s portfolio, credits, and trust score on this site.</p>';
+    h += '<div class="hv-result" style="margin-bottom:16px">';
+    h += '<div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#888;margin-bottom:6px;font-weight:600">CURRENT CREDENTIAL</div>';
+    h += '<div class="hv-result-row"><span class="hv-result-label">Tier</span><span class="hv-result-val">' + extTn + '</span></div>';
+    h += '<div class="hv-result-row"><span class="hv-result-label">ID</span><span class="hv-result-val" style="font-size:11px;word-break:break-all">' + (ext ? ext.credentialId : '') + '</span></div>';
+    h += '</div>';
+    h += '<div class="hv-result" style="margin-bottom:20px;border-color:rgba(224,90,0,0.2);background:rgba(224,90,0,0.02)">';
+    h += '<div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#e05a00;margin-bottom:6px;font-weight:600">INCOMING CREDENTIAL</div>';
+    h += '<div class="hv-result-row"><span class="hv-result-label">Tier</span><span class="hv-result-val">' + incTn + '</span></div>';
+    h += '<div class="hv-result-row"><span class="hv-result-label">ID</span><span class="hv-result-val" style="font-size:11px;word-break:break-all">' + (inc ? inc.credentialId : '') + '</span></div>';
+    h += '</div>';
+    h += '<div style="display:flex;gap:10px">';
+    h += '<button class="hv-btn hv-btn-outline" style="flex:1" onclick="resolveImportConflict(false)">Keep Current</button>';
+    h += '<button class="hv-btn hv-btn-gold" style="flex:1" onclick="resolveImportConflict(true)">Replace with Incoming</button>';
+    h += '</div>';
 
   } else if (state.phase === "terms") {
     h += '<div class="hv-legal">';
@@ -2624,11 +2650,15 @@ async function processQRImport() {
       throw new Error("Credential integrity check failed: credential ID does not match public key.");
     }
 
-    // Check for existing credential — warn if overwriting a different one
+    // S64: Check for existing credential — if different, ask user before overwriting
     var existing = loadCredFromStorage();
     if (existing && existing.credentialId !== credObj.credentialId) {
-      // Different credential exists — overwrite (same human, different device)
-      // This is expected behavior for cross-device transfer
+      // Different credential exists — show conflict UI
+      state.qrImportIncoming = credObj;
+      state.qrImportExisting = existing;
+      state.phase = "qr-import-conflict";
+      render();
+      return;
     }
 
     // Save
@@ -2655,6 +2685,21 @@ async function processQRImport() {
       render();
     }, 5000);
   }
+}
+
+// S64: Resolve import conflict — user chose to keep or replace
+function resolveImportConflict(replace) {
+  if (replace && state.qrImportIncoming) {
+    saveCredToStorage(state.qrImportIncoming);
+    existingCred = state.qrImportIncoming;
+    state.phase = "qr-import-done";
+  } else {
+    // Keep current — go to existing credential view
+    state.phase = "existing";
+  }
+  state.qrImportIncoming = null;
+  state.qrImportExisting = null;
+  render();
 }
 
 function resetFlow() {
