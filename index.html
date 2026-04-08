@@ -1711,6 +1711,15 @@ function render() {
     h += '</div>';
     h += '<button class="hv-btn hv-btn-outline" onclick="downloadBackup()">↓ Download Backup Copy</button>';
 
+    // S65: Credential explainer (accessible to users with loaded credentials)
+    h += '<div style="margin-top:20px;padding:14px 18px;background:rgba(0,0,0,0.02);border-radius:12px;font-size:12px;color:#666;line-height:1.7">';
+    h += '<details><summary style="cursor:pointer;font-weight:600;color:#333;margin-bottom:6px">How credentials work</summary>';
+    h += '<p>Your HIP credential is an Ed25519 key pair generated in your browser. The private key never leaves your device. When you attest a file, your browser signs the content hash, creating a tamper-proof proof of authorship.</p>';
+    h += '<p style="margin-top:6px"><strong>One credential per human.</strong> Tier 1 uses government ID with liveness detection for the highest trust. Tier 2 requires a peer vouch from a Tier 1 holder (limited to 1 vouch per voucher per month). Tier 3 is a trial — capped at 50 attestations and a trust score of 20.</p>';
+    h += '<p style="margin-top:6px"><strong>Your credential is stored per-site</strong> in localStorage. Use the sync buttons above to share it across hipkit.net, hipprotocol.org, and hipverify.org. Always download a backup file.</p>';
+    h += '<p style="margin-top:6px"><strong>Trust scores</strong> are computed server-side from your tier, account age, volume, and consistency. Higher tiers earn higher trust. Tier 3 is capped at 20. <a href="https://hipkit.net/learn.html" style="color:#E05A00">Learn more →</a></p>';
+    h += '</details></div>';
+
     // S55: Delete credential from this browser (local-only, does not affect server records)
     h += '<div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(0,0,0,0.06)">';
     h += '<div id="hv-delete-idle"><a href="#" onclick="confirmDeleteCredential();return false" style="font-size:12px;color:#999;text-decoration:underline">Remove credential from this browser</a></div>';
