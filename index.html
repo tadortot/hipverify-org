@@ -1,11 +1,16 @@
+<!--
+  Copyright © 2026 Peter Rieveschl. All rights reserved.
+  HIPVerify — Independent Tier 1 Pathway Operator
+  https://hipverify.org
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HIP Verify — Tier 1 Government ID Credential</title>
+<title>HIPVerify — Tier 1 Government ID Credential</title>
 <meta name="description" content="Get your Tier 1 HUMAN-PROOF credential. Independent identity verification for the Human Integrity Protocol.">
-<meta property="og:title" content="HIP Verify — Tier 1 Credential">
+<meta property="og:title" content="HIPVerify — Tier 1 Credential">
 <meta property="og:description" content="Independent identity verification for HIP Tier 1 credentials. Government ID + liveness check.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://hipverify.org">
@@ -236,7 +241,7 @@ code{font-family:'Azeret Mono','SF Mono',monospace;font-size:12px;color:#666}
 
 <nav class="hv-nav">
   <a href="https://hipverify.org" class="hv-nav-brand" style="text-decoration:none;color:#1a1a1a">
-    <span>✓</span> HIP Verify
+    <span>✓</span> HIPVerify
   </a>
   <div class="hv-nav-links">
     <a href="#verify">Verify</a>
@@ -262,7 +267,7 @@ code{font-family:'Azeret Mono','SF Mono',monospace;font-size:12px;color:#666}
 </div>
 
 <div class="hv-footer">
-  <strong style="color:#555">HIP Verify</strong> — Independent Tier 1 pathway operator<br>
+  <strong style="color:#555">HIPVerify</strong> — Independent Tier 1 pathway operator<br>
   <span style="margin-top:4px;display:inline-block">
     Operating under <a href="https://hipprotocol.org" target="_blank" rel="noopener" style="text-decoration:none"><span style="font-family:'Azeret Mono',monospace;font-weight:600;letter-spacing:2px;color:#1a1a1a">HIP</span><span style="font-family:'Azeret Mono',monospace;font-weight:600;color:#E05A00">://</span></a> DP-5 (Permissionless Proliferation).
     Not affiliated with or operated by the HIP protocol itself.
@@ -273,7 +278,8 @@ code{font-family:'Azeret Mono','SF Mono',monospace;font-size:12px;color:#666}
   </span><br>
   <span style="margin-top:8px;display:inline-block">
     <a href="#terms" onclick="window.location.hash='terms';return false;">Terms of Service</a> · <a href="#privacy" onclick="window.location.hash='privacy';return false;">Privacy Policy</a> · <a href="https://hipprotocol.org" target="_blank" rel="noopener" style="text-decoration:none"><span style="font-family:'Azeret Mono',monospace;font-size:13px;font-weight:600;letter-spacing:2px;color:#1a1a1a">HIP</span><span style="font-family:'Azeret Mono',monospace;font-size:13px;font-weight:600;color:#E05A00">://</span></a>
-  </span>
+  </span><br>
+  <span style="margin-top:6px;display:inline-block;font-size:11px;color:#bbb">© 2026 Peter Rieveschl. All rights reserved.</span>
 </div>
 
 <script>
@@ -1808,13 +1814,13 @@ function render() {
 
     h += '<a href="https://hipprotocol.org#build" target="_blank" rel="noopener" class="hv-lane" style="display:block;text-decoration:none;color:inherit">';
     h += '<div class="hv-lane-header"><div class="hv-lane-dot" style="background:#2563eb"></div><div class="hv-lane-title">Institutional Verification <span style="font-size:11px;font-weight:400;color:#2563eb">↗ API docs</span></div></div>';
-    h += '<div class="hv-lane-text">Organizations that perform their own government ID verification (universities, employers, government agencies) can issue Tier 1 credentials directly through the HIP Verify API — no fee for the end user.</div>';
+    h += '<div class="hv-lane-text">Organizations that perform their own government ID verification (universities, employers, government agencies) can issue Tier 1 credentials directly through the HIPVerify API — no fee for the end user.</div>';
     h += '<div class="hv-lane-tag" style="background:rgba(37,99,235,0.06);color:#2563eb">API Available</div>';
     h += '</a>';
 
     h += '<div class="hv-lane" onclick="void(0)" style="cursor:default">';
     h += '<div class="hv-lane-header"><div class="hv-lane-dot" style="background:#888"></div><div class="hv-lane-title">Third-Party IDV Providers</div></div>';
-    h += '<div class="hv-lane-text">Identity verification providers can integrate with the HIP Verify API to issue credentials through their own platforms. Contact us for integration details.</div>';
+    h += '<div class="hv-lane-text">Identity verification providers can integrate with the HIPVerify API to issue credentials through their own platforms. Contact us for integration details.</div>';
     h += '<div class="hv-lane-tag" style="background:rgba(0,0,0,0.04);color:#888">Coming Soon</div>';
     h += '</div>';
 
@@ -1831,7 +1837,7 @@ function render() {
     h += '<div class="hv-divider"></div>';
     h += '<div class="hv-section-label" id="how">How It Works</div>';
     h += '<div class="hv-card">';
-    h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px">HIP Verify is an <strong style="color:#1a1a1a">independent pathway operator</strong> — a third-party service that issues HIP-compatible Tier 1 credentials. It operates under the HIP Charter\'s DP-5 (Permissionless Proliferation): anyone can build tools that integrate with HIP without permission.</div>';
+    h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px">HIPVerify is an <strong style="color:#1a1a1a">independent pathway operator</strong> — a third-party service that issues HIP-compatible Tier 1 credentials. It operates under the HIP Charter\'s DP-5 (Permissionless Proliferation): anyone can build tools that integrate with HIP without permission.</div>';
     h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px"><strong style="color:#1a1a1a">What we verify:</strong> That you are a living human with a valid government-issued ID. We confirm your identity through document scanning and a live selfie.</div>';
     h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px"><strong style="color:#1a1a1a">What we store:</strong> Nothing identifiable. After verification, only a one-way deduplication hash is retained — computed from your document number, date of birth, and issuing state, then HMAC-hashed with a server-side secret. This hash cannot be reversed to recover your identity. It exists solely to prevent the same person from creating multiple credentials.</div>';
     h += '<div style="font-size:14px;color:#555;line-height:1.75"><strong style="color:#1a1a1a">What you get:</strong> A cryptographic key pair generated entirely in your browser. The private key never leaves your device. Your credential is saved to localStorage and auto-loads on hipprotocol.org. You can download a backup file for safekeeping.</div>';
@@ -1843,7 +1849,7 @@ function render() {
     h += '<div class="hv-section-label" id="about-fee">About the Verification Fee</div>';
     h += '<div class="hv-card">';
     h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px">Verifying a government ID costs money — there\'s no way around it. The $1.00 fee covers third-party identity verification processing and payment handling. It is <strong style="color:#1a1a1a">not a subscription</strong> — you pay once and your credential is yours for life.</div>';
-    h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px">This fee goes to <strong style="color:#1a1a1a">HIP Verify</strong> (this site), not to the HIP protocol. The protocol itself collects no fees — its Charter explicitly forbids it (DP-7).</div>';
+    h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px">This fee goes to <strong style="color:#1a1a1a">HIPVerify</strong> (this site), not to the HIP protocol. The protocol itself collects no fees — its Charter explicitly forbids it (DP-7).</div>';
     h += '<div style="font-size:14px;color:#555;line-height:1.75">Want to try HIP before committing? <a href="https://hipprotocol.org">Create a Tier 3 credential on hipprotocol.org</a> at no cost. You get full access to attestation and verification. You can upgrade to Tier 1 anytime.</div>';
     h += '</div>';
 
@@ -1870,7 +1876,7 @@ function render() {
     h += '<div class="hv-section-label">Charter Compliance</div>';
     h += '<div class="hv-card">';
     h += '<div style="font-size:13px;color:#555;line-height:1.7;margin-bottom:8px"><strong style="color:#1a1a1a">DP-5 — Permissionless Proliferation:</strong> "Any actor may build tools, integrate HIP, display Proofcards, host Bundles, or create verification interfaces without permission."</div>';
-    h += '<div style="font-size:13px;color:#555;line-height:1.7"><strong style="color:#1a1a1a">DP-7 — Zero Institutional Cost:</strong> "If it costs money, it\'s not the protocol — it\'s an institution choosing to invest in its own implementation." HIP Verify is that institution.</div>';
+    h += '<div style="font-size:13px;color:#555;line-height:1.7"><strong style="color:#1a1a1a">DP-7 — Zero Institutional Cost:</strong> "If it costs money, it\'s not the protocol — it\'s an institution choosing to invest in its own implementation." HIPVerify is that institution.</div>';
     h += '</div>';
     } // end if (!state.recoveryMode && !state.upgradeMode)
 
@@ -2072,7 +2078,7 @@ function render() {
     h += '<div style="font-size:13px;color:#555;font-weight:600;margin-top:20px;margin-bottom:12px">Sync this credential to other HIP sites:</div>';
     h += '<a href="' + qicTransferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Open hipprotocol.org with this credential →</a>';
     h += '<a href="' + qicHipkitUrl + '" class="hv-btn hv-btn-outline" style="text-decoration:none;margin-bottom:12px">Open HIPKit with this credential →</a>';
-    h += '<button class="hv-btn hv-btn-outline" onclick="goHome()" style="margin-bottom:12px">Stay on HIP Verify</button>';
+    h += '<button class="hv-btn hv-btn-outline" onclick="goHome()" style="margin-bottom:12px">Stay on HIPVerify</button>';
 
   // S64: Credential conflict resolution
   } else if (state.phase === "qr-import-conflict") {
@@ -2106,8 +2112,8 @@ function render() {
     h += '<div class="hv-legal-meta">Effective date: March 22, 2026 · Last updated: March 22, 2026</div>';
 
     h += '<h3>1. Service Description</h3>';
-    h += '<p>HIP Verify ("the Service") is an independent pathway operator that issues Tier 1 HUMAN-PROOF credentials compatible with the Human Integrity Protocol ("HIP"). The Service verifies your identity through government-issued ID document scanning and biometric liveness detection, then issues a cryptographic credential stored in your browser.</p>';
-    h += '<p>HIP Verify is not the HIP protocol itself. It operates under HIP Charter DP-5 (Permissionless Proliferation) as a third-party service. The HIP protocol itself collects no fees. This Service charges a one-time $1.00 fee to cover third-party identity verification costs — it is not a subscription.</p>';
+    h += '<p>HIPVerify ("the Service") is an independent pathway operator that issues Tier 1 HUMAN-PROOF credentials compatible with the Human Integrity Protocol ("HIP"). The Service verifies your identity through government-issued ID document scanning and biometric liveness detection, then issues a cryptographic credential stored in your browser.</p>';
+    h += '<p>HIPVerify is not the HIP protocol itself. It operates under HIP Charter DP-5 (Permissionless Proliferation) as a third-party service. The HIP protocol itself collects no fees. This Service charges a one-time $1.00 fee to cover third-party identity verification costs — it is not a subscription.</p>';
 
     h += '<h3>2. Eligibility</h3>';
     h += '<p>You must be at least 13 years old and possess a valid, unexpired government-issued photo ID to use this Service. By using the Service, you represent that you meet these requirements. Users under 18 should ensure they have appropriate permission to make online purchases.</p>';
@@ -2116,7 +2122,7 @@ function render() {
     h += '<p>The verification process involves:</p>';
     h += '<ul>';
     h += '<li><strong>Payment:</strong> A one-time fee of $1.00 USD processed through Stripe. This fee is non-refundable once identity verification has been initiated, except where required by law.</li>';
-    h += '<li><strong>Identity verification:</strong> You submit images of your government-issued ID and a live selfie. This verification is performed by our third-party provider, Didit. Your identity documents and biometric data are processed by Didit under their own privacy policy and are not stored by HIP Verify.</li>';
+    h += '<li><strong>Identity verification:</strong> You submit images of your government-issued ID and a live selfie. This verification is performed by our third-party provider, Didit. Your identity documents and biometric data are processed by Didit under their own privacy policy and are not stored by HIPVerify.</li>';
     h += '<li><strong>Credential issuance:</strong> Upon successful verification, a cryptographic key pair is generated entirely in your browser. The private key never leaves your device. A one-way deduplication hash is stored server-side to enforce one credential per person.</li>';
     h += '</ul>';
 
@@ -2124,7 +2130,7 @@ function render() {
     h += '<p>HIP enforces a one-credential-per-human principle. If your government ID has already been used to create a Tier 1 credential, you will not be able to create a second one. This is enforced through a one-way deduplication hash that cannot be reversed to recover your identity.</p>';
 
     h += '<h3>5. Your Credential</h3>';
-    h += '<p>Your credential is your responsibility. It is stored in your browser\'s localStorage and can be backed up as a JSON file. HIP Verify does not have access to your private key and cannot recover or reissue your credential if lost. You are solely responsible for maintaining backup copies.</p>';
+    h += '<p>Your credential is your responsibility. It is stored in your browser\'s localStorage and can be backed up as a JSON file. HIPVerify does not have access to your private key and cannot recover or reissue your credential if lost. You are solely responsible for maintaining backup copies.</p>';
     h += '<p>Anyone who possesses your credential file can sign attestations as you. Treat your credential backup file with the same care as a password.</p>';
 
     h += '<h3>6. Acceptable Use</h3>';
@@ -2147,14 +2153,14 @@ function render() {
     h += '<li><strong>Stripe</strong> for payment processing. Stripe processes your payment information under their own terms and privacy policy.</li>';
     h += '<li><strong>Cloudflare</strong> for infrastructure (Workers, KV storage). Session data and deduplication hashes are stored in Cloudflare KV.</li>';
     h += '</ul>';
-    h += '<p>HIP Verify is not responsible for the actions, privacy practices, or service availability of these third parties.</p>';
+    h += '<p>HIPVerify is not responsible for the actions, privacy practices, or service availability of these third parties.</p>';
 
     h += '<h3>9. Disclaimers</h3>';
-    h += '<p>The Service is provided "as is" without warranty of any kind. HIP Verify does not guarantee uninterrupted availability, that verification will succeed for all valid documents, or that credentials will be compatible with all future versions of the HIP protocol.</p>';
-    h += '<p>HIP Verify is not a financial service, identity provider, or certificate authority. A Tier 1 credential is a cryptographic attestation of human verification status within the HIP protocol — nothing more.</p>';
+    h += '<p>The Service is provided "as is" without warranty of any kind. HIPVerify does not guarantee uninterrupted availability, that verification will succeed for all valid documents, or that credentials will be compatible with all future versions of the HIP protocol.</p>';
+    h += '<p>HIPVerify is not a financial service, identity provider, or certificate authority. A Tier 1 credential is a cryptographic attestation of human verification status within the HIP protocol — nothing more.</p>';
 
     h += '<h3>10. Limitation of Liability</h3>';
-    h += '<p>To the maximum extent permitted by law, HIP Verify\'s total liability for any claim arising from use of the Service is limited to the amount you paid for the verification ($1.00 USD). HIP Verify is not liable for any indirect, incidental, consequential, or punitive damages.</p>';
+    h += '<p>To the maximum extent permitted by law, HIPVerify\'s total liability for any claim arising from use of the Service is limited to the amount you paid for the verification ($1.00 USD). HIPVerify is not liable for any indirect, incidental, consequential, or punitive damages.</p>';
 
     h += '<h3>11. Changes to These Terms</h3>';
     h += '<p>We may update these terms from time to time. Material changes will be noted with an updated effective date at the top of this page. Continued use of the Service after changes constitutes acceptance of the updated terms.</p>';
@@ -2162,7 +2168,7 @@ function render() {
     h += '<h3>12. Contact</h3>';
     h += '<p>For questions about these terms, contact us through the <a href="https://github.com/human-integrity-protocol/hip-protocol/issues" target="_blank" rel="noopener">HIP Protocol GitHub repository</a>.</p>';
 
-    h += '<div style="margin-top:28px"><button class="hv-btn hv-btn-outline" onclick="goHome()">← Back to HIP Verify</button></div>';
+    h += '<div style="margin-top:28px"><button class="hv-btn hv-btn-outline" onclick="goHome()">← Back to HIPVerify</button></div>';
     h += '</div>';
 
   } else if (state.phase === "privacy") {
@@ -2172,15 +2178,15 @@ function render() {
     h += '<div class="hv-legal-meta">Effective date: March 22, 2026 · Last updated: March 22, 2026</div>';
 
     h += '<h3>1. Overview</h3>';
-    h += '<p>HIP Verify is designed around a principle of minimal data collection. We verify that you are a living human with a valid government ID, then we forget who you are. This document explains exactly what data is collected, by whom, and what happens to it.</p>';
+    h += '<p>HIPVerify is designed around a principle of minimal data collection. We verify that you are a living human with a valid government ID, then we forget who you are. This document explains exactly what data is collected, by whom, and what happens to it.</p>';
 
     h += '<h3>2. Data We Collect</h3>';
 
     h += '<p><strong>Data we process but do NOT store:</strong></p>';
     h += '<ul>';
-    h += '<li><strong>Identity documents:</strong> Your government ID images are sent directly to our verification provider (Didit) for processing. HIP Verify never receives, stores, or has access to your document images.</li>';
-    h += '<li><strong>Biometric data:</strong> Your selfie and liveness check data are processed by Didit. HIP Verify never receives, stores, or has access to your biometric data.</li>';
-    h += '<li><strong>Personal information:</strong> Your name, date of birth, document number, and other identity fields extracted from your ID are processed by Didit during verification. HIP Verify receives a verification result (approved/declined) but does not receive or store your personal information in readable form.</li>';
+    h += '<li><strong>Identity documents:</strong> Your government ID images are sent directly to our verification provider (Didit) for processing. HIPVerify never receives, stores, or has access to your document images.</li>';
+    h += '<li><strong>Biometric data:</strong> Your selfie and liveness check data are processed by Didit. HIPVerify never receives, stores, or has access to your biometric data.</li>';
+    h += '<li><strong>Personal information:</strong> Your name, date of birth, document number, and other identity fields extracted from your ID are processed by Didit during verification. HIPVerify receives a verification result (approved/declined) but does not receive or store your personal information in readable form.</li>';
     h += '</ul>';
 
     h += '<p><strong>Data we DO store:</strong></p>';
@@ -2192,17 +2198,17 @@ function render() {
 
     h += '<p><strong>Data stored only in YOUR browser:</strong></p>';
     h += '<ul>';
-    h += '<li><strong>Your credential:</strong> Your cryptographic key pair, credential ID, and issuance metadata are stored in your browser\'s localStorage. This data never leaves your device unless you explicitly export or transfer it. HIP Verify cannot access your browser localStorage.</li>';
+    h += '<li><strong>Your credential:</strong> Your cryptographic key pair, credential ID, and issuance metadata are stored in your browser\'s localStorage. This data never leaves your device unless you explicitly export or transfer it. HIPVerify cannot access your browser localStorage.</li>';
     h += '</ul>';
 
     h += '<h3>3. Payment Data</h3>';
-    h += '<p>Payment is processed entirely by Stripe. HIP Verify does not receive, process, or store your credit card number, billing address, or other payment details. Stripe\'s privacy policy governs their handling of your payment data.</p>';
+    h += '<p>Payment is processed entirely by Stripe. HIPVerify does not receive, process, or store your credit card number, billing address, or other payment details. Stripe\'s privacy policy governs their handling of your payment data.</p>';
 
     h += '<h3>4. Third-Party Data Processing</h3>';
-    h += '<p><strong>Didit</strong> (identity verification provider) processes your identity documents and biometric data under their own privacy policy. HIP Verify has a data processing relationship with Didit in which:</p>';
+    h += '<p><strong>Didit</strong> (identity verification provider) processes your identity documents and biometric data under their own privacy policy. HIPVerify has a data processing relationship with Didit in which:</p>';
     h += '<ul>';
     h += '<li>Didit receives your ID images and selfie for verification</li>';
-    h += '<li>Didit sends verification results (approved/declined, document type, verification scores) to HIP Verify via a secure webhook</li>';
+    h += '<li>Didit sends verification results (approved/declined, document type, verification scores) to HIPVerify via a secure webhook</li>';
     h += '<li>Didit\'s data retention policies govern how long they retain your identity data</li>';
     h += '</ul>';
     h += '<p><strong>Stripe</strong> (payment processor) handles all payment data under their own privacy policy.</p>';
@@ -2230,7 +2236,7 @@ function render() {
     h += '<p>All data in transit is encrypted via HTTPS/TLS. Deduplication hashes are computed using HMAC-SHA-256 with a server-side secret key. The QR credential transfer system uses AES-256-GCM end-to-end encryption where the encryption key never touches the server. Your credential\'s private key is generated and stored entirely in your browser and is never transmitted to any server.</p>';
 
     h += '<h3>8. Your Rights</h3>';
-    h += '<p>Because HIP Verify stores only irreversible hashes rather than personal information, most traditional data subject rights (access, correction, portability) do not apply in a meaningful way — there is no personal data to access, correct, or port. However:</p>';
+    h += '<p>Because HIPVerify stores only irreversible hashes rather than personal information, most traditional data subject rights (access, correction, portability) do not apply in a meaningful way — there is no personal data to access, correct, or port. However:</p>';
     h += '<ul>';
     h += '<li><strong>Deletion:</strong> You can request deletion of your deduplication hash. Be aware that this would allow re-verification with the same ID, which may conflict with the one-credential-per-human principle. Contact us through GitHub to make this request.</li>';
     h += '<li><strong>Information:</strong> You can contact us to confirm whether a deduplication hash exists for your identity.</li>';
@@ -2248,7 +2254,7 @@ function render() {
     h += '<h3>12. Contact</h3>';
     h += '<p>For privacy-related questions or data deletion requests, contact us through the <a href="https://github.com/human-integrity-protocol/hip-protocol/issues" target="_blank" rel="noopener">HIP Protocol GitHub repository</a>.</p>';
 
-    h += '<div style="margin-top:28px"><button class="hv-btn hv-btn-outline" onclick="goHome()">← Back to HIP Verify</button></div>';
+    h += '<div style="margin-top:28px"><button class="hv-btn hv-btn-outline" onclick="goHome()">← Back to HIPVerify</button></div>';
     h += '</div>';
   }
 
