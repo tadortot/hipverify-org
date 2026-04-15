@@ -1950,7 +1950,7 @@ function render() {
       h += '<div class="hv-result-row"><span class="hv-result-label">Recovered From</span><span class="hv-result-val">' + c.recoveredFrom + '</span></div>';
     }
     if (state.recoveryTrustScore !== null && state.recoveryTrustScore !== undefined) {
-      h += '<div class="hv-result-row"><span class="hv-result-label">Trust Score</span><span class="hv-result-val">' + state.recoveryTrustScore + ' / 100 (migrated)</span></div>';
+      h += '<div class="hv-result-row"><span class="hv-result-label">Trust Index</span><span class="hv-result-val">' + state.recoveryTrustScore + ' / 1000 (migrated)</span></div>';
     }
     h += '<div class="hv-result-row"><span class="hv-result-label">Recovered</span><span class="hv-result-val">' + new Date(c.recoveredAt).toLocaleString() + '</span></div>';
     h += '</div>';
@@ -1970,7 +1970,7 @@ function render() {
     h += '<div class="hv-result-row"><span class="hv-result-label">Credential ID</span><span class="hv-result-val" style="font-size:11px;word-break:break-all">' + upgCredId + '</span></div>';
     h += '<div class="hv-result-row"><span class="hv-result-label">New Tier</span><span class="hv-result-val">Tier 1 — Government ID</span></div>';
     if (state.upgradeTrustScore !== null && state.upgradeTrustScore !== undefined) {
-      h += '<div class="hv-result-row"><span class="hv-result-label">Trust Score</span><span class="hv-result-val">' + state.upgradeTrustScore + ' / 100 (updated)</span></div>';
+      h += '<div class="hv-result-row"><span class="hv-result-label">Trust Index</span><span class="hv-result-val">' + state.upgradeTrustScore + ' / 1000 (updated)</span></div>';
     }
     h += '<div class="hv-result-row"><span class="hv-result-label">Upgraded</span><span class="hv-result-val">' + new Date().toLocaleString() + '</span></div>';
     h += '</div>';
@@ -2519,7 +2519,8 @@ async function recoverCredential(sessionData) {
     try { localStorage.removeItem("hip_recovery_mode"); } catch(e) {}
 
     state.credential = newCred;
-    state.recoveryTrustScore = recoverData.trust_score || null;
+    // S92 #23 Step-2a: prefer trust_index (0-1000 per HP-SPEC-v1_3), fall back to legacy trust_score.
+    state.recoveryTrustScore = recoverData.trust_index ?? recoverData.trust_score ?? null;
     state.phase = "recovery-done";
     render();
 
@@ -2563,7 +2564,8 @@ async function upgradeCredential(sessionData) {
     try { localStorage.removeItem("hip_upgrade_mode"); } catch(e) {}
     try { localStorage.removeItem("hip_upgrade_cred_id"); } catch(e) {}
 
-    state.upgradeTrustScore = upgradeData.trust_score || null;
+    // S92 #23 Step-2a: prefer trust_index (0-1000 per HP-SPEC-v1_3), fall back to legacy trust_score.
+    state.upgradeTrustScore = upgradeData.trust_index ?? upgradeData.trust_score ?? null;
     state.phase = "upgrade-done";
     render();
 
