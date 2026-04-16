@@ -2475,6 +2475,7 @@ async function recoverCredential(sessionData) {
     }
 
     // Call worker to rotate dedup mapping and migrate trust
+    // S97 #34d: recovery_nonce makes retries idempotent (server caches result for 60s)
     var recoverResp = await fetch(WORKER_URL + "/recover-credential", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -2483,6 +2484,7 @@ async function recoverCredential(sessionData) {
         session_id: state.sessionId,
         old_credential_id: oldCredId,
         new_credential_id: cid,
+        recovery_nonce: crypto.randomUUID(),
       }),
     });
 
