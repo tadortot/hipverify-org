@@ -2444,7 +2444,7 @@ async function createCredential(sessionData) {
       await fetch(WORKER_URL + "/trust/initialize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credential_id: cid, tier: 1 }),
+        body: JSON.stringify({ credential_id: cid, tier: 1, session_id: state.sessionId }),
       });
     } catch (_) {}
 
