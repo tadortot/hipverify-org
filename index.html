@@ -1689,10 +1689,10 @@ function render() {
 
   if (state.phase === "existing") {
     var ec = existingCred;
-    var tn = ec.tier === 1 ? "Tier 1 — Government ID" : ec.tier === 2 ? "Tier 2 — Peer Vouch" : ec.tier === 3 ? "Tier 3 — Device Biometric" : "Credential";
+    var tn = ec.tier === 1 ? "Tier 1 — Government ID" : ec.tier === 2 ? "Tier 2 — Peer Vouch" : ec.tier === 3 ? "Tier 3 — Biometric Presence" : "Credential";
     h += '<div class="hv-badge">● Existing Credential</div>';
     h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">You already have a credential</h1>';
-    h += '<p class="hv-hero-sub">HIP follows a one-credential-per-human principle. You have an active ' + tn + ' credential saved in this browser.</p>';
+    h += '<p class="hv-hero-sub">You have an active ' + tn + ' credential saved in this browser.</p>';
     h += '<div class="hv-result">';
     h += '<div class="hv-result-row"><span class="hv-result-label">Tier</span><span class="hv-result-val">' + tn + '</span></div>';
     h += '<div class="hv-result-row"><span class="hv-result-label">ID</span><span class="hv-result-val">' + ec.credentialId + '</span></div>';
@@ -1721,9 +1721,9 @@ function render() {
     h += '<div style="margin-top:20px;padding:14px 18px;background:rgba(0,0,0,0.02);border-radius:12px;font-size:12px;color:#666;line-height:1.7">';
     h += '<details><summary style="cursor:pointer;font-weight:600;color:#333;margin-bottom:6px">How credentials work</summary>';
     h += '<p>Your HIP credential is an Ed25519 key pair generated in your browser. The private key never leaves your device. When you attest a file, your browser signs the content hash, creating a tamper-proof proof of authorship.</p>';
-    h += '<p style="margin-top:6px"><strong>One credential per human.</strong> Tier 1 uses government ID with liveness detection for the highest trust. Tier 2 requires a peer vouch from a Tier 1 holder (limited to 1 vouch per voucher per month). Tier 3 is a trial — capped at 50 attestations and a trust score of 20.</p>';
+    h += '<p style="margin-top:6px"><strong>Tiered trust levels.</strong> Tier 1 uses government ID with liveness detection — one credential per human, enforced by dedup. Tier 2 requires a peer vouch from a Tier 1 holder. Tier 3 proves biometric presence (a live human was present) — capped at 50 attestations and a trust index of 60.</p>';
     h += '<p style="margin-top:6px"><strong>Your credential is stored per-site</strong> in localStorage. Use the sync buttons above to share it across hipkit.net, hipprotocol.org, and hipverify.org. Always download a backup file.</p>';
-    h += '<p style="margin-top:6px"><strong>Trust scores</strong> are computed server-side from your tier, account age, volume, and consistency. Higher tiers earn higher trust. Tier 3 is capped at 20. <a href="https://hipkit.net/learn.html" style="color:#E05A00">Learn more →</a></p>';
+    h += '<p style="margin-top:6px"><strong>Trust Index</strong> is computed server-side from your tier, account age, volume, and consistency (0–1000 scale). Higher tiers start with more weight. Tier 3 is capped at 60. <a href="https://hipkit.net/learn.html" style="color:#E05A00">Learn more →</a></p>';
     h += '</details></div>';
 
     // S55: Delete credential from this browser (local-only, does not affect server records)
@@ -1801,8 +1801,8 @@ function render() {
     h += '<p style="font-size:14px;color:#555;line-height:1.7;margin-bottom:16px">Self-service isn\'t the only way to get a Tier 1 credential. You can also be verified through your institution, or get started with HIP at no cost using a different credential tier.</p>';
 
     h += '<a href="https://hipprotocol.org#tier3" target="_blank" rel="noopener" class="hv-lane" style="display:block;text-decoration:none;color:inherit">';
-    h += '<div class="hv-lane-header"><div class="hv-lane-dot" style="background:#16a34a"></div><div class="hv-lane-title">Tier 3 — Device Biometric <span style="font-size:11px;font-weight:400;color:#16a34a">↗ hipprotocol.org</span></div></div>';
-    h += '<div class="hv-lane-text">Try HIP at no cost. Use Face ID, Touch ID, or Windows Hello to create a trial credential instantly. Limited to 50 attestations with a trust score capped at 20. You can upgrade to Tier 1 anytime — your trust history is preserved.</div>';
+    h += '<div class="hv-lane-header"><div class="hv-lane-dot" style="background:#16a34a"></div><div class="hv-lane-title">Tier 3 — Biometric Presence <span style="font-size:11px;font-weight:400;color:#16a34a">↗ hipprotocol.org</span></div></div>';
+    h += '<div class="hv-lane-text">Try HIP at no cost. Use Face ID, Touch ID, or Windows Hello to prove a live human is present and create a credential instantly. Trust index capped at 60, limited to 50 attestations. You can upgrade to Tier 1 anytime — your trust history is preserved.</div>';
     h += '<div class="hv-lane-tag" style="background:rgba(22,163,74,0.06);color:#16a34a">No Cost · Trial Tier · 50 Attestation Limit</div>';
     h += '</a>';
 
@@ -1841,7 +1841,7 @@ function render() {
     h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px"><strong style="color:#1a1a1a">What we verify:</strong> That you are a living human with a valid government-issued ID. We confirm your identity through document scanning and a live selfie.</div>';
     h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-bottom:14px"><strong style="color:#1a1a1a">What we store:</strong> Nothing identifiable. After verification, only a one-way deduplication hash is retained — computed from your document number, date of birth, and issuing state, then HMAC-hashed with a server-side secret. This hash cannot be reversed to recover your identity. It exists solely to prevent the same person from creating multiple credentials.</div>';
     h += '<div style="font-size:14px;color:#555;line-height:1.75"><strong style="color:#1a1a1a">What you get:</strong> A cryptographic key pair generated entirely in your browser. The private key never leaves your device. Your credential is saved to localStorage and auto-loads on hipprotocol.org. You can download a backup file for safekeeping.</div>';
-    h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-top:14px;padding-top:14px;border-top:1px solid rgba(0,0,0,0.06)"><strong style="color:#1a1a1a">Anti-abuse measures:</strong> Government ID dedup prevents duplicate Tier 1 credentials. Tier 2 vouches are capped at 1 per voucher per month. Tier 3 trial credentials are limited to 50 attestations with a trust score ceiling of 20. Superseded credentials (from recovery or upgrade) are blocked from attestation server-side. All trust scores are computed server-side from objective factors and cannot be inflated by the client.</div>';
+    h += '<div style="font-size:14px;color:#555;line-height:1.75;margin-top:14px;padding-top:14px;border-top:1px solid rgba(0,0,0,0.06)"><strong style="color:#1a1a1a">Anti-abuse measures:</strong> Government ID dedup prevents duplicate Tier 1 credentials. Tier 2 vouches are capped at 1 per voucher per month. Tier 3 biometric-presence credentials are limited to 50 attestations with a trust index ceiling of 60 and a 2/IP/24h rate limit. Superseded credentials (from recovery or upgrade) are blocked from attestation server-side. All trust indices are computed server-side from objective factors and cannot be inflated by the client.</div>';
     h += '</div>';
 
     // ── About the fee ──
@@ -2010,7 +2010,7 @@ function render() {
       h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">This device doesn\'t have a HIP credential to transfer. Complete verification first, then try again.</p>';
       h += '<button class="hv-btn" onclick="resetFlow()">Get a Credential</button>';
     } else {
-      var xTn = xCred.tier === 1 ? "Tier 1 — Government ID" : xCred.tier === 2 ? "Tier 2 — Peer Vouch" : xCred.tier === 3 ? "Tier 3 — Device Biometric" : "Credential";
+      var xTn = xCred.tier === 1 ? "Tier 1 — Government ID" : xCred.tier === 2 ? "Tier 2 — Peer Vouch" : xCred.tier === 3 ? "Tier 3 — Biometric Presence" : "Credential";
       h += '<div class="hv-badge" style="border-color:rgba(37,99,235,0.3);color:#2563eb">↗ Transfer</div>';
       h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Send credential to another device</h1>';
       h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your credential will be encrypted and sent securely. Only the device showing the QR code can decrypt it.</p>';
@@ -2040,7 +2040,7 @@ function render() {
 
   } else if (state.phase === "receive-done") {
     var rc = loadCredFromStorage();
-    var rcTn = rc ? (rc.tier === 1 ? "Tier 1 — Government ID" : rc.tier === 2 ? "Tier 2 — Peer Vouch" : rc.tier === 3 ? "Tier 3 — Device Biometric" : "Credential") : "Credential";
+    var rcTn = rc ? (rc.tier === 1 ? "Tier 1 — Government ID" : rc.tier === 2 ? "Tier 2 — Peer Vouch" : rc.tier === 3 ? "Tier 3 — Biometric Presence" : "Credential") : "Credential";
     h += '<div class="hv-badge" style="border-color:rgba(22,163,74,0.3);color:#16a34a">✓ Received</div>';
     h += '<h1 class="hv-serif" style="font-size:clamp(28px,6vw,40px);font-weight:400;margin-bottom:12px">Credential saved to this device</h1>';
     h += '<p style="font-size:15px;color:#555;line-height:1.7;margin-bottom:24px">Your credential has been securely transferred and saved to this browser.</p>';
@@ -2062,7 +2062,7 @@ function render() {
 
   } else if (state.phase === "qr-import-done") {
     var qic = loadCredFromStorage();
-    var qicTn = qic ? (qic.tier === 1 ? "Tier 1 — Government ID" : qic.tier === 2 ? "Tier 2 — Peer Vouch" : qic.tier === 3 ? "Tier 3 — Device Biometric" : "Credential") : "Credential";
+    var qicTn = qic ? (qic.tier === 1 ? "Tier 1 — Government ID" : qic.tier === 2 ? "Tier 2 — Peer Vouch" : qic.tier === 3 ? "Tier 3 — Biometric Presence" : "Credential") : "Credential";
     var qicTransferUrl = qic ? buildTransferUrl(qic) : "https://hipprotocol.org";
     var qicHipkitUrl = qic ? buildQRImportUrl(qic).replace("https://hipverify.org#hip-import=", "https://hipkit.net/app.html#hip-import=") : "https://hipkit.net/app.html";
     h += '<div class="hv-badge" style="border-color:rgba(22,163,74,0.3);color:#16a34a">✓ Credential Loaded</div>';
@@ -2243,7 +2243,7 @@ function render() {
     h += '</ul>';
 
     h += '<h3>9. Young Users</h3>';
-    h += '<p>The Service is available to users aged 13 and older who possess a valid government-issued ID. We do not knowingly process data from children under 13. The HIP protocol itself has no age restriction — minors can also obtain credentials through Peer Vouch (Tier 2) or Device Biometric (Tier 3) on hipprotocol.org at no cost and with no age requirement.</p>';
+    h += '<p>The Service is available to users aged 13 and older who possess a valid government-issued ID. We do not knowingly process data from children under 13. The HIP protocol itself has no age restriction — minors can also obtain credentials through Peer Vouch (Tier 2) or Biometric Presence (Tier 3) on hipprotocol.org at no cost and with no age requirement.</p>';
 
     h += '<h3>10. International Users</h3>';
     h += '<p>The Service is operated from the United States. Data is processed through Cloudflare\'s global network, Didit\'s verification infrastructure, and Stripe\'s payment infrastructure. By using the Service, you consent to the processing of your data in these systems.</p>';
