@@ -1717,6 +1717,15 @@ function render() {
     h += '</div>';
     h += '<button class="hv-btn hv-btn-outline" onclick="downloadBackup()">↓ Download Backup Copy</button>';
 
+    // S99 #32: Vouch button for T1 holders — links to hipprotocol.org vouch flow
+    if (ec.tier === 1) {
+      h += '<div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(0,0,0,0.06)">';
+      h += '<div style="font-family:\'Azeret Mono\',monospace;font-size:10px;letter-spacing:1px;color:#2563eb;margin-bottom:8px">PEER VOUCH</div>';
+      h += '<p style="font-size:13px;color:#555;line-height:1.6;margin-bottom:12px">As a Tier 1 holder, you can vouch for someone to issue them a Tier 2 credential. Your reputation is at stake — vouching for a bad actor affects your trust score.</p>';
+      h += '<a href="https://hipprotocol.org#vouch" target="_blank" rel="noopener" class="hv-btn hv-btn-outline" style="text-decoration:none;color:#2563eb;border-color:rgba(37,99,250,0.25)">Issue a Peer Vouch on hipprotocol.org →</a>';
+      h += '</div>';
+    }
+
     // S65: Credential explainer (accessible to users with loaded credentials)
     h += '<div style="margin-top:20px;padding:14px 18px;background:rgba(0,0,0,0.02);border-radius:12px;font-size:12px;color:#666;line-height:1.7">';
     h += '<details><summary style="cursor:pointer;font-weight:600;color:#333;margin-bottom:6px">How credentials work</summary>';
