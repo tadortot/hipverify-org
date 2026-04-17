@@ -1963,7 +1963,9 @@ function render() {
     }
     h += '<div class="hv-result-row"><span class="hv-result-label">Recovered</span><span class="hv-result-val">' + new Date(c.recoveredAt).toLocaleString() + '</span></div>';
     h += '</div>';
-    h += '<a href="' + transferUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Transfer to hipprotocol.org →</a>';
+    var hipkitRecoveredUrl = buildQRImportUrl(c).replace("https://hipverify.org#hip-import=", "https://hipkit.net/app.html#hip-import=");
+    h += '<a href="' + hipkitRecoveredUrl + '" class="hv-btn hv-btn-gold" style="text-decoration:none;margin-bottom:12px">Open HIPKit with this credential →</a>';
+    h += '<a href="' + transferUrl + '" class="hv-btn hv-btn-outline" style="text-decoration:none;margin-bottom:12px">Open hipprotocol.org instead</a>';
     h += '<button class="hv-btn hv-btn-outline" style="margin-bottom:12px" onclick="downloadBackup()">↓ Download Backup Copy</button>';
     h += '<div class="hv-alert hv-alert-amber"><strong>Save your backup this time!</strong> Download a backup copy of your new credential file and store it somewhere safe. If you lose access again, you can recover — but it costs another verification fee.</div>';
 
