@@ -2186,7 +2186,7 @@ function render() {
     h += '<div class="hv-legal">';
     h += '<div class="hv-badge">Legal</div>';
     h += '<h2>Privacy Policy</h2>';
-    h += '<div class="hv-legal-meta">Effective date: March 22, 2026 · Last updated: March 22, 2026</div>';
+    h += '<div class="hv-legal-meta">Effective date: March 22, 2026 · Last updated: April 25, 2026</div>';
 
     h += '<h3>1. Overview</h3>';
     h += '<p>HIPVerify is designed around a principle of minimal data collection. We verify that you are a living human with a valid government ID, then we forget who you are. This document explains exactly what data is collected, by whom, and what happens to it.</p>';
@@ -2259,10 +2259,16 @@ function render() {
     h += '<h3>10. International Users</h3>';
     h += '<p>The Service is operated from the United States. Data is processed through Cloudflare\'s global network, Didit\'s verification infrastructure, and Stripe\'s payment infrastructure. By using the Service, you consent to the processing of your data in these systems.</p>';
 
-    h += '<h3>11. Changes to This Policy</h3>';
+    h += '<h3>11. Protocol vs HIPVerify (Pathway Provider Boundary)</h3>';
+    h += '<p>This privacy policy applies to <strong>HIPVerify</strong>, a Tier 1 pathway provider operating under the Human Integrity Protocol (HIP) Charter. It is important to distinguish HIPVerify (the operator) from the HIP protocol itself.</p>';
+    h += '<p><strong>The HIP protocol layer</strong> — the public ledger, the worker that registers attestations, the verifier that validates them — does not see, store, or transmit identity data. The protocol receives only a one-way deduplication hash, a tier label (1, 2, or 3), and a pathway identifier. No documents, no biometric data, no personally identifiable information ever reaches protocol-layer code or ledger entries.</p>';
+    h += '<p><strong>HIPVerify, as a pathway provider</strong>, is the institutional operator that handles the Tier 1 identity verification step. Identity documents and biometric data flow to our sub-processor Didit; payment data flows to our sub-processor Stripe; only the resulting deduplication hash, tier label, and pathway identifier reach the protocol. Operator-level access to Didit\'s verification dashboard is retained for support and audit purposes; HIPVerify does not retain copies of your identity documents or biometric data outside of Didit\'s systems.</p>';
+    h += '<p>Under <strong>Charter Deployment Principle 5 (Permissionless Proliferation)</strong>, anyone may build alternative Tier 1 pathway providers. HIPVerify is the first; it is not the only one. Under <strong>Charter Deployment Principle 8 (Protocol, Not Entity)</strong>, HIPVerify is an institutional participant in the HIP ecosystem, not the protocol itself. The data-handling described in this policy is governed by HIPVerify\'s own institutional policy and applicable regulation, not by the HIP protocol specification. If HIPVerify\'s pathway operations are ever Suspended or Declassified per <a href="https://github.com/human-integrity-protocol/hip-protocol/blob/main/specs/HIP_PATHWAY-SPEC-v1.md" target="_blank" rel="noopener">PATHWAY-SPEC-v1</a>, alternative Tier 1 pathways operating under DP-5 may be established by other operators with their own data policies.</p>';
+
+    h += '<h3>12. Changes to This Policy</h3>';
     h += '<p>We may update this policy from time to time. Material changes will be noted with an updated date at the top of this page.</p>';
 
-    h += '<h3>12. Contact</h3>';
+    h += '<h3>13. Contact</h3>';
     h += '<p>For privacy-related questions or data deletion requests, contact us through the <a href="https://github.com/human-integrity-protocol/hip-protocol/issues" target="_blank" rel="noopener">HIP Protocol GitHub repository</a>.</p>';
 
     h += '<div style="margin-top:28px"><button class="hv-btn hv-btn-outline" onclick="goHome()">← Back to HIPVerify</button></div>';
